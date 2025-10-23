@@ -1,15 +1,16 @@
 package ru.practicum.ewm.stats.server.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
 @Entity
 @Table(name = "endpoint_hits")
 @AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 public class EndpointHit {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

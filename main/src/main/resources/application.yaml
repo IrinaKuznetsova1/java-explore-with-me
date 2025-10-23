@@ -29,6 +29,4 @@ spring:
           orm:
             jpa: INFO
           jpa:
-            JpaTransactionManager: DEBUG
           transaction: INFO
-          transaction.interceptor: TRACE
