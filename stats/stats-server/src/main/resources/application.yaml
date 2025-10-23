@@ -1,0 +1,16 @@
+server:
+  port: 9090
+
+spring:
+  datasource:
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://stats-db:6543/ewm_stats_db
+    username: dbuser
+    password: 12345
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+      show-sql: true
+    properties:
+      hibernate.format_sql: true
+      dialect: org.hibernate.dialect.PostgreSQLDialect
