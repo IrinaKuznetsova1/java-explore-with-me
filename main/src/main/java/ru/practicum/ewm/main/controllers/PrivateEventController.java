@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.main.dto.*;
-import ru.practicum.ewm.main.model.Request;
 import ru.practicum.ewm.main.services.EventService;
 import ru.practicum.ewm.main.services.RequestService;
 
@@ -28,6 +27,7 @@ public class PrivateEventController {
     public Collection<EventShortDto> findEventsByUserId(@PathVariable long userId,
                                                         @RequestParam(defaultValue = "0") @Min(0) int from,
                                                         @RequestParam(defaultValue = "10") @Min(1) int size) {
+        log.info("Получен запрос GET/users/{}/events.", userId);
         return eventService.findEventsByUserId(userId, from, size);
     }
 
@@ -35,12 +35,14 @@ public class PrivateEventController {
     @PostMapping
     public EventFullDto createEvent(@PathVariable @Min(1) long userId,
                                     @Valid @RequestBody @NotNull NewEventDto newEvent) {
+        log.info("Получен запрос POST/users/{}/events.", userId);
         return eventService.createEvent(userId, newEvent);
     }
 
     @GetMapping("/{eventId}")
     public EventFullDto findEventByIdAndUserId(@PathVariable long eventId,
                                                @PathVariable long userId) {
+        log.info("Получен запрос GET/users/{}/events/{}.", userId, eventId);
         return eventService.findEventByIdAndUserId(eventId, userId);
     }
 
@@ -48,12 +50,14 @@ public class PrivateEventController {
     public EventFullDto updateEventByUser(@Valid @RequestBody UpdateEventUserRequest request,
                                           @PathVariable long eventId,
                                           @PathVariable long userId) {
+        log.info("Получен запрос PATCH/users/{}/events/{}.", userId, eventId);
         return eventService.updateEventByUser(request, eventId, userId);
     }
 
     @GetMapping("/{eventId}/requests")
     public Collection<ParticipationRequestDto> findRequests(@PathVariable long eventId,
                                                             @PathVariable long userId) {
+        log.info("Получен запрос GET/users/{}/events/{}/requests.", userId, eventId);
         return requestService.findRequests(eventId, userId);
     }
 
@@ -61,6 +65,7 @@ public class PrivateEventController {
     public EventRequestStatusUpdateResult updateRequestsStatus(@PathVariable long eventId,
                                                                @PathVariable long userId,
                                                                @Valid @RequestBody @NotNull EventRequestStatusUpdateRequest request) {
+        log.info("Получен запрос PATCH/users/{}/events/{}/requests.", userId, eventId);
         return requestService.updateRequestsStatus(eventId, userId, request);
     }
 }
