@@ -1,7 +1,9 @@
 package ru.practicum.ewm.stats.client;
 
-import org.springframework.http.*;
-import org.springframework.lang.Nullable;
+import io.micrometer.common.lang.Nullable;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 

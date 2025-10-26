@@ -22,12 +22,12 @@ public class StatsService {
     private final StatsMapper statsMapper;
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public EndpointHitDto create(EndpointHitNewRequest endpointHitNewRequest) {
+    public void create(EndpointHitNewRequest endpointHitNewRequest) {
         if (endpointHitNewRequest == null) {
             log.warn("Невозможно сохранить в статистику просмотр, который равен null.");
             throw new IllegalArgumentException("Невозможно сохранить в статистику endpointHitNewRequest, который равен null.");
         }
-        return statsMapper.toEndpointHitDto(repository.save(statsMapper.toEndpointHit(endpointHitNewRequest)));
+        repository.save(statsMapper.toEndpointHit(endpointHitNewRequest));
     }
 
     public List<ViewStats> getStats(String start, String end, List<String> uris, boolean unique) {

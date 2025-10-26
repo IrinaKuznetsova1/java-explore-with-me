@@ -20,9 +20,9 @@ public class StatsController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/hit")
-    public EndpointHitDto create(@RequestBody EndpointHitNewRequest endpointHitNewRequest) {
+    public void create(@RequestBody EndpointHitNewRequest endpointHitNewRequest) {
         log.info("Получен запрос POST/hit");
-        return service.create(endpointHitNewRequest);
+        service.create(endpointHitNewRequest);
     }
 
     @GetMapping("/stats")
