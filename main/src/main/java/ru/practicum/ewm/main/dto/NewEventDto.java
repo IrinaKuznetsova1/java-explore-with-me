@@ -40,9 +40,11 @@ public class NewEventDto {
     private boolean paid;
 
     @JsonFormat(shape = JsonFormat.Shape.BOOLEAN)
+    @Builder.Default
     private boolean requestModeration = true;
 
     @PositiveOrZero(message = "поле 'participantLimit' должно быть больше нуля или равно 0.")
     @JsonFormat(shape = JsonFormat.Shape.NUMBER_INT)
-    private int participantLimit;
+    @Builder.Default
+    private int participantLimit = 0;
 }

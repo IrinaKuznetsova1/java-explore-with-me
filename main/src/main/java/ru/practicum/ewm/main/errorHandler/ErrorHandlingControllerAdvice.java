@@ -105,4 +105,14 @@ public class ErrorHandlingControllerAdvice {
                 HttpStatus.BAD_REQUEST.toString(),
                 e.getTimestamp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(NotAvailableException.class)
+    public ResponseEntity<ApiError> onNotAvailableException(NotAvailableException e) {
+        log.warn("Обработка исключения NotAvailableException: {}", e.getMessage());
+        return new ResponseEntity<>(new ApiError(
+                e.getMessage(),
+                e.getReason(),
+                HttpStatus.FORBIDDEN.toString(),
+                e.getTimestamp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), HttpStatus.FORBIDDEN);
+    }
 }

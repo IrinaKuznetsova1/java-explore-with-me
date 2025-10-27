@@ -11,7 +11,7 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 public class EventRequestStatusUpdateRequest {
-    @NotEmpty(message = "Список ids не может быть пустым")
+    @NotEmpty(message = "Список ids не может быть пустым.")
     private List<Long> requestIds;
 
     @NotNull(message = "Поле 'status' не должно быть null.")

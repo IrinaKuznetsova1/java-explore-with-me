@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
-import ru.practicum.ewm.main.annotation.NoSpaces;
 import ru.practicum.ewm.main.enums.StateActionAdmin;
 import ru.practicum.ewm.main.model.Location;
 
@@ -18,15 +17,12 @@ public class UpdateEventAdminRequest {
     @JsonFormat(shape = JsonFormat.Shape.NUMBER_INT)
     private Integer category;
 
-    @NoSpaces(message = "поле 'title' не должно быть пустым.")
     @Size(min = 3, max = 120, message = "количество символов поля 'title' - от 3 до 120.")
     private String title;
 
-    @NoSpaces(message = "поле 'annotation' не должно быть пустым.")
     @Size(min = 20, max = 2000, message = "количество символов поля 'annotation' - от 20 до 2000.")
     private String annotation;
 
-    @NoSpaces(message = "поле 'description' не должно быть пустым.")
     @Size(min = 20, max = 7000, message = "количество символов поля 'description' - от 20 до 7000.")
     private String description;
 
@@ -40,7 +36,7 @@ public class UpdateEventAdminRequest {
     private Boolean paid;
 
     @JsonFormat(shape = JsonFormat.Shape.BOOLEAN)
-    private Boolean requestModeration = true;
+    private Boolean requestModeration;
 
     @Positive(message = "поле 'participantLimit' должно быть больше нуля.")
     @JsonFormat(shape = JsonFormat.Shape.NUMBER_INT)

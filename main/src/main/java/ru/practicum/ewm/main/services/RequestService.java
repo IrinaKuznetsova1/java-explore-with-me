@@ -54,9 +54,11 @@ public class RequestService {
             log.warn("Выброшено ConflictException: нельзя участвовать в неопубликованном событии.");
             throw new ConflictException("Невозможно сохранить запрос.", "Нельзя участвовать в неопубликованном событии.");
         }
-
-        Long countConfirmedRequests = requestRepository.getCountConfirmedRequestsByEventId(eventId);
-        if (event.getParticipantLimit() == countConfirmedRequests) {
+        
+        long countConfirmedRequests = requestRepository.getCountConfirmedRequestsByEventId(eventId);
+        System.out.println("event = " + event);
+        System.out.println("countConfirmedRequests = " + countConfirmedRequests);
+        if (event.getParticipantLimit() < ++countConfirmedRequests) {
             log.warn("Выброшено ConflictException: достигнут лимит запросов на участие .");
             throw new ConflictException("Невозможно сохранить запрос.", "Достигнут лимит запросов на участие .");
         }
@@ -66,7 +68,7 @@ public class RequestService {
                 .event(event)
                 .requester(requester)
                 .build();
-        if (event.getParticipantLimit() == 0)
+        if (event.getParticipantLimit() == 0 || !event.isRequestModeration())
             newRequest.setStatus(RequestStatus.CONFIRMED);
         else
             newRequest.setStatus(RequestStatus.PENDING);
@@ -105,8 +107,11 @@ public class RequestService {
                                                                EventRequestStatusUpdateRequest request) {
         validateUserExisted(userId);
         Event event = validateEventExistedByUserId(eventId, userId);
-        List<Request> requestsToUpdate = requestRepository.findAllByEventIdAndRequesterIdIn(eventId, request.getRequestIds());
-        Long countRequests = requestRepository.getCountConfirmedRequestsByEventId(eventId);
+        System.out.println("event = " + event);
+        List<Request> requestsToUpdate = requestRepository.findAllByIdInAndEventId(request.getRequestIds(), eventId);
+        System.out.println("requestsToUpdate = " + requestsToUpdate);
+        long countRequests = requestRepository.getCountConfirmedRequestsByEventId(eventId);
+        System.out.println("countRequests = " + countRequests);
         event.setConfirmedRequests(countRequests);
         if (event.getParticipantLimit() == 0 || !event.isRequestModeration()) {
             log.warn("Выброшено ConflictException: подтверждение заявок не требуется.");
@@ -121,6 +126,7 @@ public class RequestService {
                     req.setStatus(RequestStatus.REJECTED);
                     requestRepository.save(req);
                     rejectedRequests.add(req);
+                    System.out.println("req = " + req);
                 } else {
                     log.warn("Выброшено ConflictException: невозможно обновить статус.");
                     throw new ConflictException("Выброшено ConflictException: невозможно обновить статус.", "Некорректный запрос.");

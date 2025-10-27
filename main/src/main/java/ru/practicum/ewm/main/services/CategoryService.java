@@ -7,6 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.main.dto.CategoryDto;
 import ru.practicum.ewm.main.dto.NewCategoryDto;
+import ru.practicum.ewm.main.exceptions.ConflictException;
 import ru.practicum.ewm.main.exceptions.DuplicatedDataException;
 import ru.practicum.ewm.main.exceptions.NotFoundException;
 import ru.practicum.ewm.main.mapper.CategoryMapper;
@@ -35,7 +36,11 @@ public class CategoryService {
     public void deleteCat(int catId) {
         repository.findById(catId).
                 orElseThrow(() -> new NotFoundException("Категория с id: " + catId + " не найдена.", "Искомый объект не был найден."));
-        repository.deleteById(catId);
+        try {
+            repository.deleteById(catId);
+        } catch (RuntimeException e) {
+            throw new ConflictException(e.getMessage(), "Нельзя удалить категорию, если ее значение используется в других таблицах.");
+        }
         log.info("Категория с id {} удалена.", catId);
     }
 

@@ -23,6 +23,8 @@ public interface EventMapper {
 
     EventFullDto toEventFullDto(Event event);
 
+    List<EventFullDto> toEventFullDtoList(List<Event> events);
+
     EventShortDto toEventShortDto(Event event);
 
     List<EventShortDto> toEventShortDtoList(List<Event> events);

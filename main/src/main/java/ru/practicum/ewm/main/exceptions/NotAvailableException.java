@@ -1,7 +1,10 @@
 package ru.practicum.ewm.main.exceptions;
 
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 
+@Getter
 public class NotAvailableException extends RuntimeException {
     private final String reason;
     private final LocalDateTime timestamp = LocalDateTime.now();

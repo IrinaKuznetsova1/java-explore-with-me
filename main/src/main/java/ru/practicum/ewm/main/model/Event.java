@@ -1,10 +1,7 @@
 package ru.practicum.ewm.main.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import ru.practicum.ewm.main.enums.EventsState;
 
 import java.time.LocalDateTime;
@@ -15,6 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Getter
 @Setter
+@ToString
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
