@@ -3,7 +3,6 @@ package ru.practicum.ewm.stats.server.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.ewm.stats.dto.EndpointHitDto;
 import ru.practicum.ewm.stats.dto.EndpointHitNewRequest;
 import ru.practicum.ewm.stats.dto.ViewStats;
 import ru.practicum.ewm.stats.server.repository.StatsRepository;
@@ -13,6 +12,7 @@ import ru.practicum.ewm.stats.server.mapper.StatsMapper;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +37,11 @@ public class StatsService {
         if (endDate.isBefore(startDate)) {
             log.warn("Получить статистику невозможно: дата end не может быть раньше даты start.");
             throw new TimeValidationException("end", "Дата end не может быть раньше даты start.");
+        }
+
+        if (uris != null) {
+            Optional<String> uri = uris.stream().filter(string -> !string.equals("/events")).findAny();
+            if (uris.isEmpty() || uri.isEmpty()) uris = null;
         }
 
         if (unique) {

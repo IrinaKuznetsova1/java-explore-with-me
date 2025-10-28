@@ -4,11 +4,14 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
+import lombok.extern.jackson.Jacksonized;
 
 import java.time.LocalDateTime;
 
-@Data
 @Builder
+@Jacksonized
+@Getter
 public class EndpointHitNewRequest {
     @NotBlank(message = "поле 'app' не должно быть null или быть пустым.")
     @Size(max = 32, message = "максимальная длина поля 'app' - 32 символа.")

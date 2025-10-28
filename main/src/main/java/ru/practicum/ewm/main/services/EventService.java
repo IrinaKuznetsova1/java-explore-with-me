@@ -152,14 +152,10 @@ public class EventService {
             int from,
             int size) {
         validateRangeStartAndRangeEnd(rangeStart, rangeEnd);
-        if ((users != null && users.isEmpty()) ||
-                (states != null && states.isEmpty()) ||
-                (categories != null && categories.isEmpty())) {
-            log.warn("Выброшено ValidationException: список в строке запроса не может быть пустым.");
-            throw new ValidationException("Список в строке запроса не может быть пустым.", "Некорректный запрос.");
-        }
-        final Pageable pageable = PageRequest.of(from, size);
-        List<Event> events = eventRepository.findEventsByAdminsFilters(users, states, categories, rangeStart, rangeEnd, pageable);
+        final Pageable pageable = PageRequest.of(from / size, size);
+        Predicate predicate = getPredicateForAdminSearch(users, states, categories, rangeStart, rangeEnd);
+
+        List<Event> events = eventRepository.findAll(predicate, pageable).getContent();
         if (events.isEmpty()) {
             log.info("События по  заданным параметрам не найдены.");
             return List.of();
@@ -189,8 +185,10 @@ public class EventService {
             pageable = PageRequest.of(from / size, size);
         Predicate predicate = getPredicateForPublicSearch(text, categories, paid, rangeStart, rangeEnd, onlyAvailable);
         List<Event> events = eventRepository.findAll(predicate, pageable).getContent();
+        System.out.println("events = " + events);
         if (events.isEmpty()) {
             log.info("События по заданным параметрам не найдены.");
+            saveHit(request.getRemoteAddr(), "/events");
             return List.of();
         }
         Map<Long, Long> views = getViewsByUris(events);
@@ -217,6 +215,28 @@ public class EventService {
         return eventMapper.toEventFullDto(event);
     }
 
+    private Predicate getPredicateForAdminSearch(List<Long> users,
+                                                 List<EventsState> states,
+                                                 List<Integer> categories,
+                                                 LocalDateTime rangeStart,
+                                                 LocalDateTime rangeEnd) {
+        QEvent event = QEvent.event;
+        BooleanBuilder predicate = new BooleanBuilder();
+
+        // проверка запрашиваемых параметров
+        if (users != null && !users.isEmpty())
+            predicate.and(event.initiator.id.in(users));
+        if (states != null && !states.isEmpty())
+            predicate.and(event.state.in(states));
+        if (categories != null && !categories.isEmpty())
+            predicate.and(event.category.id.in(categories));
+        if (rangeStart != null)
+            predicate.and(event.eventDate.goe(rangeStart));
+        if (rangeEnd != null)
+            predicate.and(event.eventDate.loe(rangeEnd));
+        return predicate;
+    }
+
     private Predicate getPredicateForPublicSearch(String text,
                                                   List<Integer> categories,
                                                   Boolean paid,
@@ -237,11 +257,11 @@ public class EventService {
         if (paid != null)
             predicate.and(event.paid.eq(paid));
         if (rangeStart != null)
-            predicate.and(event.eventDate.after(rangeStart));
+            predicate.and(event.eventDate.goe(rangeStart));
         if (rangeEnd != null)
-            predicate.and(event.eventDate.before(rangeEnd));
+            predicate.and(event.eventDate.loe(rangeEnd));
         if (rangeStart == null && rangeEnd == null)
-            predicate.and(event.eventDate.after(LocalDateTime.now()));
+            predicate.and(event.eventDate.loe(LocalDateTime.now()));
         if (onlyAvailable != null)
             predicate.and(event.participantLimit.eq(0L))
                     .or(event.participantLimit.gt(event.confirmedRequests));
@@ -290,8 +310,8 @@ public class EventService {
 
     private void validateRangeStartAndRangeEnd(LocalDateTime start, LocalDateTime end) {
         if (start != null && end != null && end.isBefore(start)) {
-            log.info("Выброшено TimeValidationException: дата start должна быть раньше даты end.");
-            throw new TimeValidationException("Дата start должна быть раньше даты end.", "Для запрошенной операции условия не выполнены");
+            log.info("Выброшено ValidationException: дата start должна быть раньше даты end.");
+            throw new ValidationException("Дата start должна быть раньше даты end.", "Для запрошенной операции условия не выполнены");
         }
     }
 
@@ -314,9 +334,11 @@ public class EventService {
     }
 
     private Long getEventsViews(long eventId, LocalDateTime start) {
-        List<String> uris = List.of("event/" + eventId);
-        final LocalDateTime end = LocalDateTime.now();
-        return client.getStats(start.format(dtf), end.format(dtf), uris, true)
+        List<String> uris = List.of("/event/" + eventId);
+        final LocalDateTime end = LocalDateTime.now().plusHours(1);
+        List<ViewStats> viewStats = client.getStats(LocalDateTime.now().minusHours(1).format(dtf), end.format(dtf), uris, false);
+        System.out.println("viewStats = " + viewStats);
+        return client.getStats(start.format(dtf), end.format(dtf), uris, false)
                 .stream()
                 .findFirst()
                 .map(ViewStats::getHits)

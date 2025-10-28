@@ -56,7 +56,7 @@ public class RequestService {
         }
         
         long countConfirmedRequests = event.getConfirmedRequests();
-        if (event.getParticipantLimit() < ++countConfirmedRequests) {
+        if (event.getParticipantLimit() != 0 && (event.getParticipantLimit() < ++countConfirmedRequests)) {
             log.warn("Выброшено ConflictException: достигнут лимит запросов на участие .");
             throw new ConflictException("Невозможно сохранить запрос.", "Достигнут лимит запросов на участие .");
         }
