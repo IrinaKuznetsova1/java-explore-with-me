@@ -66,7 +66,7 @@ public class EventService {
     }
 
     public EventFullDto createEvent(long userId, NewEventDto newEvent) {
-        validateEventDate(newEvent.getEventDate(), 2);
+        validateEventDate(newEvent.getEventDate());
         final User user = validateUserExisted(userId);
         final Category category = validateCategoryExisted(newEvent.getCategory());
         Event savedEvent = eventRepository.save(eventMapper.toEvent(newEvent, category, user));
@@ -130,7 +130,7 @@ public class EventService {
             throw new ConflictException("Невозможно обновить опубликованное событие.", "Для запрошенной операции условия не выполнены.");
         }
         if (request.getEventDate() != null)
-            validateEventDate(request.getEventDate(), 2);
+            validateEventDate(request.getEventDate());
         if (request.getStateAction() != null) {
             switch (request.getStateAction()) {
                 case SEND_TO_REVIEW -> event.setState(EventsState.PENDING);
@@ -205,6 +205,18 @@ public class EventService {
         return eventMapper.toEventShortDtoList(events);
     }
 
+    public EventFullDto getPublicEventById(long eventId, HttpServletRequest request) {
+        Event event = validateEventExisted(eventId);
+        if (event.getState() != EventsState.PUBLISHED) {
+            log.warn("Выброшено NotFoundException: искомый объект не опубликован.");
+            throw new NotFoundException("Событие с id: " + event + " не было найдено.", "Искомый объект не опубликован.");
+        }
+        event.setViews(getEventsViews(eventId, event.getPublishedOn()));
+        saveHit(request.getRemoteAddr(), request.getRequestURI());
+        log.info("Запрашиваемое событие с id: {} найдено.", event.getId());
+        return eventMapper.toEventFullDto(event);
+    }
+
     private Predicate getPredicateForPublicSearch(String text,
                                                   List<Integer> categories,
                                                   Boolean paid,
@@ -268,8 +280,8 @@ public class EventService {
                 .orElseThrow(() -> new NotFoundException("Событие с id: " + eventId + " не найдено.", "Искомый объект не был найден."));
     }
 
-    private void validateEventDate(LocalDateTime eventDate, int hours) {
-        if (eventDate.isBefore(LocalDateTime.now().plusHours(hours))) {
+    private void validateEventDate(LocalDateTime eventDate) {
+        if (eventDate.isBefore(LocalDateTime.now().plusHours(2))) {
             log.warn("Выброшено TimeValidationException: дата события не может быть раньше,чем через 2 часа.");
             throw new TimeValidationException("Для запрошенной операции условия не выполнены.",
                     "Дата события не может быть раньше,чем через 2 часа.");

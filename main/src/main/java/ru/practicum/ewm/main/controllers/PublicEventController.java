@@ -6,10 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import ru.practicum.ewm.main.dto.EventFullDto;
 import ru.practicum.ewm.main.dto.EventShortDto;
 import ru.practicum.ewm.main.enums.EventsSort;
 import ru.practicum.ewm.main.services.EventService;
@@ -40,6 +38,12 @@ public class PublicEventController {
         log.info("Получен запрос GET/events.");
         return eventService.getPublicEvents(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from,
                 size, request);
+    }
+
+    @GetMapping("/{id}")
+    public EventFullDto findEventById(@PathVariable @Min(1) long id, HttpServletRequest request) {
+        log.info("Получен запрос GET/events/{}.", id);
+        return eventService.getPublicEventById(id, request);
     }
 
 }
