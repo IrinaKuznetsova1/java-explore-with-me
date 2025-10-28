@@ -67,7 +67,7 @@ public class CategoryService {
     }
 
     public Collection<CategoryDto> findCategories(int from, int size) {
-        final PageRequest pageable = PageRequest.of(from, size, Sort.by("id").ascending());
+        final PageRequest pageable = PageRequest.of(from / size, size, Sort.by("id").ascending());
         log.info("Поиск категорий c номера страницы {} и c количеством элементов на странице {}.", from, size);
         return mapper.toCategoryDtoList(repository.findAll(pageable).getContent());
     }

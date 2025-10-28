@@ -24,7 +24,7 @@ public class PrivateEventController {
     private final RequestService requestService;
 
     @GetMapping
-    public Collection<EventShortDto> findEventsByUserId(@PathVariable long userId,
+    public Collection<EventShortDto> findEventsByUserId(@PathVariable @Min(1) long userId,
                                                         @RequestParam(defaultValue = "0") @Min(0) int from,
                                                         @RequestParam(defaultValue = "10") @Min(1) int size) {
         log.info("Получен запрос GET/users/{}/events.", userId);
@@ -40,30 +40,30 @@ public class PrivateEventController {
     }
 
     @GetMapping("/{eventId}")
-    public EventFullDto findEventByIdAndUserId(@PathVariable long eventId,
-                                               @PathVariable long userId) {
+    public EventFullDto findEventByIdAndUserId(@PathVariable @Min(1) long eventId,
+                                               @PathVariable @Min(1) long userId) {
         log.info("Получен запрос GET/users/{}/events/{}.", userId, eventId);
         return eventService.findEventByIdAndUserId(eventId, userId);
     }
 
     @PatchMapping("/{eventId}")
-    public EventFullDto updateEventByUser(@Valid @RequestBody UpdateEventUserRequest request,
-                                          @PathVariable long eventId,
-                                          @PathVariable long userId) {
+    public EventFullDto updateEventByUser(@Valid @RequestBody @NotNull UpdateEventUserRequest request,
+                                          @PathVariable @Min(1) long eventId,
+                                          @PathVariable @Min(1) long userId) {
         log.info("Получен запрос PATCH/users/{}/events/{}.", userId, eventId);
         return eventService.updateEventByUser(request, eventId, userId);
     }
 
     @GetMapping("/{eventId}/requests")
-    public Collection<ParticipationRequestDto> findRequests(@PathVariable long eventId,
-                                                            @PathVariable long userId) {
+    public Collection<ParticipationRequestDto> findRequests(@PathVariable @Min(1) long eventId,
+                                                            @PathVariable @Min(1) long userId) {
         log.info("Получен запрос GET/users/{}/events/{}/requests.", userId, eventId);
         return requestService.findRequests(eventId, userId);
     }
 
     @PatchMapping("/{eventId}/requests")
-    public EventRequestStatusUpdateResult updateRequestsStatus(@PathVariable long eventId,
-                                                               @PathVariable long userId,
+    public EventRequestStatusUpdateResult updateRequestsStatus(@PathVariable @Min(1) long eventId,
+                                                               @PathVariable @Min(1) long userId,
                                                                @Valid @RequestBody @NotNull EventRequestStatusUpdateRequest request) {
         log.info("Получен запрос PATCH/users/{}/events/{}/requests.", userId, eventId);
         return requestService.updateRequestsStatus(eventId, userId, request);

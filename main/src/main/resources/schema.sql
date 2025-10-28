@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS events (
     state VARCHAR(32) NOT NULL,
     paid BOOLEAN NOT NULL,
     request_moderation BOOLEAN NOT NULL,
-    participant_limit INT NOT NULL,
+    participant_limit BIGINT NOT NULL,
+    confirmed_requests BIGINT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS requests (

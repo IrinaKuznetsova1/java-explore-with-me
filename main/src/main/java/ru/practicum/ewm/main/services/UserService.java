@@ -24,8 +24,8 @@ public class UserService {
     private final UserMapper mapper;
 
     public Collection<UserDto> findUsers(List<Long> ids, int from, int size) {
-        final PageRequest pageable = PageRequest.of(from, size, Sort.by("id").ascending());
-        if (ids == null || ids.isEmpty()) {
+        final PageRequest pageable = PageRequest.of(from / size, size, Sort.by("id").ascending());
+        if (ids == null && ids.isEmpty()) {
             log.info("Поиск пользователей c номера страницы {} и c количеством элементов на странице {}.", from, size);
             return mapper.toUserDtoList(repository.findAll(pageable).getContent());
         } else {

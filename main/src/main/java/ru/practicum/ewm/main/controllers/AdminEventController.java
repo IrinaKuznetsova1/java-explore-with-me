@@ -2,7 +2,7 @@ package ru.practicum.ewm.main.controllers;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -32,14 +32,14 @@ public class AdminEventController {
             @RequestParam(required = false) List<Integer> categories,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
-            @RequestParam(defaultValue = "0") int from,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "0") @Min(0) int from,
+            @RequestParam(defaultValue = "10") @Min(1) int size) {
         log.info("Получен запрос GET/admin/events.");
         return eventService.findEventsByAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
     }
 
     @PatchMapping("/{eventId}")
-    public EventFullDto updateEventByAdmin(@Valid @RequestBody UpdateEventAdminRequest request,
+    public EventFullDto updateEventByAdmin(@Valid @RequestBody @NotNull UpdateEventAdminRequest request,
                                            @PathVariable @Min(1) long eventId) {
         log.info("Получен запрос PATCH/admin/events/{}.", eventId);
         return eventService.updateEventByAdmin(request, eventId);

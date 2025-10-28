@@ -6,6 +6,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriBuilder;
+import ru.practicum.ewm.stats.client.exception.NotAvailableStatServerException;
 import ru.practicum.ewm.stats.dto.EndpointHitNewRequest;
 import org.springframework.http.MediaType;
 import ru.practicum.ewm.stats.dto.ViewStats;

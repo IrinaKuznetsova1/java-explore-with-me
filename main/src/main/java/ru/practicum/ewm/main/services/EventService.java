@@ -1,24 +1,27 @@
 package ru.practicum.ewm.main.services;
 
+import com.querydsl.core.BooleanBuilder;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.querydsl.core.types.Predicate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import ru.practicum.ewm.main.dto.*;
+import ru.practicum.ewm.main.enums.EventsSort;
 import ru.practicum.ewm.main.enums.EventsState;
 import ru.practicum.ewm.main.enums.StateActionAdmin;
 import ru.practicum.ewm.main.exceptions.*;
 import ru.practicum.ewm.main.mapper.EventMapper;
-import ru.practicum.ewm.main.model.Category;
-import ru.practicum.ewm.main.model.ConfirmedRequestsCount;
-import ru.practicum.ewm.main.model.Event;
-import ru.practicum.ewm.main.model.User;
+import ru.practicum.ewm.main.model.*;
 import ru.practicum.ewm.main.repository.CategoryRepository;
 import ru.practicum.ewm.main.repository.EventRepository;
-import ru.practicum.ewm.main.repository.RequestRepository;
 import ru.practicum.ewm.main.repository.UserRepository;
 import ru.practicum.ewm.stats.client.StatClient;
+import ru.practicum.ewm.stats.dto.EndpointHitNewRequest;
 import ru.practicum.ewm.stats.dto.ViewStats;
 
 import java.time.LocalDateTime;
@@ -33,7 +36,6 @@ public class EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
-    private final RequestRepository requestRepository;
 
     private final StatClient client;
     private final EventMapper eventMapper;
@@ -52,14 +54,12 @@ public class EventService {
         }
 
         Map<Long, Long> views = getViewsByUris(events);
-        Map<Long, Long> confirmedCounts = getConfirmedRequests(events);
         if (views.isEmpty())
             return eventMapper.toEventShortDtoList(events);
         return events.stream()
                 .map(event -> {
                     EventShortDto eventShortDto = eventMapper.toEventShortDto(event);
                     eventShortDto.setViews(views.get(event.getId()));
-                    eventShortDto.setConfirmedRequests(confirmedCounts.get(event.getId()));
                     return eventShortDto;
                 })
                 .toList();
@@ -77,7 +77,6 @@ public class EventService {
         validateUserExisted(userId);
         Event event = validateEventExistedByUserId(eventId, userId);
         event.setViews(getEventsViews(eventId, event.getCreatedOn()));
-        event.setConfirmedRequests(requestRepository.getCountConfirmedRequestsByEventId(eventId));
         return eventMapper.toEventFullDto(event);
     }
 
@@ -96,12 +95,12 @@ public class EventService {
             }
         }
         if (event.getState() != EventsState.PENDING && request.getStateAction() == StateActionAdmin.PUBLISH_EVENT) {
-            log.warn("Выброшено исключение NotAvailableException: опубликовать можно только события с EventsState.PENDING.");
+            log.warn("Выброшено исключение ConflictException: опубликовать можно только события с EventsState.PENDING.");
             throw new ConflictException("Опубликовать можно только события с EventsState.PENDING.", "Для запрошенной операции условия не выполнены.");
 
         }
         if (event.getState() == EventsState.PUBLISHED && request.getStateAction() == StateActionAdmin.REJECT_EVENT) {
-            log.warn("Выброшено исключение NotAvailableException: невозможно отклонить опубликованное событие.");
+            log.warn("Выброшено исключение ConflictException: невозможно отклонить опубликованное событие.");
             throw new ConflictException("Невозможно отклонить опубликованное событие.", "Для запрошенной операции условия не выполнены.");
 
         }
@@ -116,7 +115,6 @@ public class EventService {
         }
         Event updatedEvent = eventRepository.save(updEventForSave);
         updatedEvent.setViews(getEventsViews(eventId, event.getCreatedOn()));
-        updatedEvent.setConfirmedRequests(requestRepository.getCountConfirmedRequestsByEventId(eventId));
         log.info("Событие  с id: {} успешно обновлено.", eventId);
         return eventMapper.toEventFullDto(updatedEvent);
     }
@@ -128,7 +126,7 @@ public class EventService {
             category = validateCategoryExisted(request.getCategory());
         Event event = validateEventExistedByUserId(eventId, userId);
         if (event.getState() == EventsState.PUBLISHED) {
-            log.warn("Выброшено исключение NotAvailableException: невозможно обновить опубликованное событие.");
+            log.warn("Выброшено исключение ConflictException: невозможно обновить опубликованное событие.");
             throw new ConflictException("Невозможно обновить опубликованное событие.", "Для запрошенной операции условия не выполнены.");
         }
         if (request.getEventDate() != null)
@@ -141,7 +139,6 @@ public class EventService {
         }
         Event updEvent = eventRepository.save(eventMapper.updateUserEvent(request, event, category));
         updEvent.setViews(getEventsViews(eventId, event.getCreatedOn()));
-        updEvent.setConfirmedRequests(requestRepository.getCountConfirmedRequestsByEventId(eventId));
         log.info("Событие с id: {} успешно обновлено.", eventId);
         return eventMapper.toEventFullDto(updEvent);
     }
@@ -154,6 +151,7 @@ public class EventService {
             LocalDateTime rangeEnd,
             int from,
             int size) {
+        validateRangeStartAndRangeEnd(rangeStart, rangeEnd);
         if ((users != null && users.isEmpty()) ||
                 (states != null && states.isEmpty()) ||
                 (categories != null && categories.isEmpty())) {
@@ -162,16 +160,91 @@ public class EventService {
         }
         final Pageable pageable = PageRequest.of(from, size);
         List<Event> events = eventRepository.findEventsByAdminsFilters(users, states, categories, rangeStart, rangeEnd, pageable);
-        if (events.isEmpty())
-            return Collections.emptyList();
+        if (events.isEmpty()) {
+            log.info("События по  заданным параметрам не найдены.");
+            return List.of();
+        }
         Map<Long, Long> views = getViewsByUris(events);
-        Map<Long, Long> eventsConfirmedRequests = getConfirmedRequests(events);
-        events.forEach(event -> {
-            event.setViews(views.get(event.getId()));
-            event.setConfirmedRequests(eventsConfirmedRequests.get(event.getId()));
-        });
+        events.forEach(event -> event.setViews(views.get(event.getId())));
         log.info("Запрашиваемые события найдены в количестве: {}.", events.size());
         return eventMapper.toEventFullDtoList(events);
+    }
+
+    public List<EventShortDto> getPublicEvents(
+            String text,
+            List<Integer> categories,
+            Boolean paid,
+            LocalDateTime rangeStart,
+            LocalDateTime rangeEnd,
+            Boolean onlyAvailable,
+            EventsSort sort,
+            int from,
+            int size,
+            HttpServletRequest request) {
+        validateRangeStartAndRangeEnd(rangeStart, rangeEnd);
+        final Pageable pageable;
+        if (sort == EventsSort.EVENT_DATE)
+            pageable = PageRequest.of(from / size, size, Sort.by("eventDate").descending());
+        else
+            pageable = PageRequest.of(from / size, size);
+        Predicate predicate = getPredicateForPublicSearch(text, categories, paid, rangeStart, rangeEnd, onlyAvailable);
+        List<Event> events = eventRepository.findAll(predicate, pageable).getContent();
+        if (events.isEmpty()) {
+            log.info("События по заданным параметрам не найдены.");
+            return List.of();
+        }
+        Map<Long, Long> views = getViewsByUris(events);
+        events.forEach(event -> {
+            event.setViews(views.get(event.getId()));
+            saveHit(request.getRemoteAddr(), request.getRequestURI() + "/" + event.getId());
+        });
+        if (sort == EventsSort.VIEWS) {
+            events = events.stream().sorted(Comparator.comparing(Event::getViews).reversed()).toList();
+        }
+        log.info("Запрашиваемые события найдены в количестве:{}.", events.size());
+        return eventMapper.toEventShortDtoList(events);
+    }
+
+    private Predicate getPredicateForPublicSearch(String text,
+                                                  List<Integer> categories,
+                                                  Boolean paid,
+                                                  LocalDateTime rangeStart,
+                                                  LocalDateTime rangeEnd,
+                                                  Boolean onlyAvailable) {
+        QEvent event = QEvent.event;
+        BooleanBuilder predicate = new BooleanBuilder();
+        predicate.and(event.state.eq(EventsState.PUBLISHED));
+
+        // проверка запрашиваемых параметров
+        if (StringUtils.hasText(text)) {
+            predicate.and(event.annotation.toLowerCase().contains(text.toLowerCase()))
+                    .or(event.description.toLowerCase().contains(text.toLowerCase()));
+        }
+        if (categories != null && !categories.isEmpty())
+            predicate.and(event.category.id.in(categories));
+        if (paid != null)
+            predicate.and(event.paid.eq(paid));
+        if (rangeStart != null)
+            predicate.and(event.eventDate.after(rangeStart));
+        if (rangeEnd != null)
+            predicate.and(event.eventDate.before(rangeEnd));
+        if (rangeStart == null && rangeEnd == null)
+            predicate.and(event.eventDate.after(LocalDateTime.now()));
+        if (onlyAvailable != null)
+            predicate.and(event.participantLimit.eq(0L))
+                    .or(event.participantLimit.gt(event.confirmedRequests));
+        return predicate;
+    }
+
+    private void saveHit(String ip, String uri) {
+        EndpointHitNewRequest newRequest = EndpointHitNewRequest.builder()
+                .app("ewm-main-service")
+                .uri(uri)
+                .ip(ip)
+                .timestamp(LocalDateTime.now())
+                .build();
+        log.info("Отправка EndpointHitNewRequest в client.");
+        client.createHit(newRequest);
     }
 
     private User validateUserExisted(long userId) {
@@ -203,6 +276,13 @@ public class EventService {
         }
     }
 
+    private void validateRangeStartAndRangeEnd(LocalDateTime start, LocalDateTime end) {
+        if (start != null && end != null && end.isBefore(start)) {
+            log.info("Выброшено TimeValidationException: дата start должна быть раньше даты end.");
+            throw new TimeValidationException("Дата start должна быть раньше даты end.", "Для запрошенной операции условия не выполнены");
+        }
+    }
+
     private Map<Long, Long> getViewsByUris(List<Event> events) {
         List<String> uris = events
                 .stream()
@@ -230,21 +310,6 @@ public class EventService {
                 .map(ViewStats::getHits)
                 .orElse(0L);
     }
-
-    private Map<Long, Long> getConfirmedRequests(List<Event> events) {
-        List<Long> eventsIds = events.stream().map(Event::getId).toList();
-        List<ConfirmedRequestsCount> confirmedRequestsCounts = requestRepository.getCountConfirmedRequests(eventsIds);
-        if (confirmedRequestsCounts.isEmpty()) {
-            return events.stream()
-                    .collect(Collectors.toMap(Event::getId, event -> 0L));
-        }
-        return confirmedRequestsCounts.stream()
-                .collect(Collectors.toMap(
-                        ConfirmedRequestsCount::getEventId,
-                        ConfirmedRequestsCount::getCount
-                ));
-    }
-
 
     private Long getIdFromUriString(String uri) {
         try {

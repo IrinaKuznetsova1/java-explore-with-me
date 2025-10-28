@@ -1,4 +1,4 @@
-package ru.practicum.ewm.stats.client;
+package ru.practicum.ewm.stats.client.exception;
 
 public class NotAvailableStatServerException extends RuntimeException {
     public NotAvailableStatServerException(String message) {

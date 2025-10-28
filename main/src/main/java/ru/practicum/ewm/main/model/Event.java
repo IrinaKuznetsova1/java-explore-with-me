@@ -54,8 +54,8 @@ public class Event {
 
     @Column(name = "participant_limit", nullable = false)
     private long participantLimit;
-    @Transient
-    private long confirmedRequests;
+    @Column(name = "confirmed_requests", nullable = false)
+    private long confirmedRequests = 0;
     @Transient
     private long views;
 }

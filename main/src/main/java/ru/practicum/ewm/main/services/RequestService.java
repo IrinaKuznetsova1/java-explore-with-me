@@ -55,9 +55,7 @@ public class RequestService {
             throw new ConflictException("Невозможно сохранить запрос.", "Нельзя участвовать в неопубликованном событии.");
         }
         
-        long countConfirmedRequests = requestRepository.getCountConfirmedRequestsByEventId(eventId);
-        System.out.println("event = " + event);
-        System.out.println("countConfirmedRequests = " + countConfirmedRequests);
+        long countConfirmedRequests = event.getConfirmedRequests();
         if (event.getParticipantLimit() < ++countConfirmedRequests) {
             log.warn("Выброшено ConflictException: достигнут лимит запросов на участие .");
             throw new ConflictException("Невозможно сохранить запрос.", "Достигнут лимит запросов на участие .");
@@ -68,8 +66,11 @@ public class RequestService {
                 .event(event)
                 .requester(requester)
                 .build();
-        if (event.getParticipantLimit() == 0 || !event.isRequestModeration())
+        if (event.getParticipantLimit() == 0 || !event.isRequestModeration()) {
             newRequest.setStatus(RequestStatus.CONFIRMED);
+            event.setConfirmedRequests(countConfirmedRequests + 1);
+            eventRepository.save(event);
+        }
         else
             newRequest.setStatus(RequestStatus.PENDING);
 
@@ -87,8 +88,15 @@ public class RequestService {
            throw  new NotFoundException("Запрос на участие с id: " + requestId + " пользователя с id: " + userId + " не найден.",
                     "Искомый объект не был найден.");
         }
+        RequestStatus oldStatus = request.getStatus();
         request.setStatus(RequestStatus.CANCELED);
         Request updRequest = requestRepository.save(request);
+        if (oldStatus == RequestStatus.CONFIRMED) {
+            Event event = request.getEvent();
+            long newConfirmedRequests = event.getConfirmedRequests() - 1;
+            event.setConfirmedRequests(newConfirmedRequests);
+            eventRepository.save(event);
+        }
         log.info("Запрос на участие успешно отменен.");
         return requestMapper.toParticipationRequestDto(updRequest);
     }
@@ -107,12 +115,7 @@ public class RequestService {
                                                                EventRequestStatusUpdateRequest request) {
         validateUserExisted(userId);
         Event event = validateEventExistedByUserId(eventId, userId);
-        System.out.println("event = " + event);
         List<Request> requestsToUpdate = requestRepository.findAllByIdInAndEventId(request.getRequestIds(), eventId);
-        System.out.println("requestsToUpdate = " + requestsToUpdate);
-        long countRequests = requestRepository.getCountConfirmedRequestsByEventId(eventId);
-        System.out.println("countRequests = " + countRequests);
-        event.setConfirmedRequests(countRequests);
         if (event.getParticipantLimit() == 0 || !event.isRequestModeration()) {
             log.warn("Выброшено ConflictException: подтверждение заявок не требуется.");
             throw new ConflictException("Подтверждение заявок не требуется.", "Некорректный запрос.");
@@ -126,7 +129,6 @@ public class RequestService {
                     req.setStatus(RequestStatus.REJECTED);
                     requestRepository.save(req);
                     rejectedRequests.add(req);
-                    System.out.println("req = " + req);
                 } else {
                     log.warn("Выброшено ConflictException: невозможно обновить статус.");
                     throw new ConflictException("Выброшено ConflictException: невозможно обновить статус.", "Некорректный запрос.");
@@ -145,6 +147,7 @@ public class RequestService {
                 requestRepository.save(req);
                 confirmedRequests.add(req);
                 event.setConfirmedRequests(++count);
+                eventRepository.save(event);
                 } else {
                     log.warn("Выброшено ConflictException: невозможно обновить статус.");
                     throw new ConflictException("Выброшено ConflictException: невозможно обновить статус.", "Некорректный запрос.");
