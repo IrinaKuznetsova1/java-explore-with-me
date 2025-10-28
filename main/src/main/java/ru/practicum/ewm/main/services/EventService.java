@@ -59,7 +59,7 @@ public class EventService {
         return events.stream()
                 .map(event -> {
                     EventShortDto eventShortDto = eventMapper.toEventShortDto(event);
-                    eventShortDto.setViews(views.get(event.getId()));
+                    eventShortDto.setViews(views.getOrDefault(event.getId(), 0L));
                     return eventShortDto;
                 })
                 .toList();
@@ -161,7 +161,7 @@ public class EventService {
             return List.of();
         }
         Map<Long, Long> views = getViewsByUris(events);
-        events.forEach(event -> event.setViews(views.get(event.getId())));
+        events.forEach(event -> event.setViews(views.getOrDefault(event.getId(), 0L)));
         log.info("Запрашиваемые события найдены в количестве: {}.", events.size());
         return eventMapper.toEventFullDtoList(events);
     }
@@ -185,7 +185,6 @@ public class EventService {
             pageable = PageRequest.of(from / size, size);
         Predicate predicate = getPredicateForPublicSearch(text, categories, paid, rangeStart, rangeEnd, onlyAvailable);
         List<Event> events = eventRepository.findAll(predicate, pageable).getContent();
-        System.out.println("events = " + events);
         if (events.isEmpty()) {
             log.info("События по заданным параметрам не найдены.");
             saveHit(request.getRemoteAddr(), "/events");
@@ -193,7 +192,7 @@ public class EventService {
         }
         Map<Long, Long> views = getViewsByUris(events);
         events.forEach(event -> {
-            event.setViews(views.get(event.getId()));
+            event.setViews(views.getOrDefault(event.getId(), 0L));
             saveHit(request.getRemoteAddr(), request.getRequestURI() + "/" + event.getId());
         });
         if (sort == EventsSort.VIEWS) {
@@ -318,7 +317,7 @@ public class EventService {
     private Map<Long, Long> getViewsByUris(List<Event> events) {
         List<String> uris = events
                 .stream()
-                .map(event -> "events/" + event.getId())
+                .map(event -> "/events/" + event.getId())
                 .toList();
         final LocalDateTime start = LocalDateTime.of(2000, 1, 1, 0, 0, 0);
         final LocalDateTime end = LocalDateTime.now();
@@ -334,10 +333,9 @@ public class EventService {
     }
 
     private Long getEventsViews(long eventId, LocalDateTime start) {
-        List<String> uris = List.of("/event/" + eventId);
+        List<String> uris = List.of("/events/" + eventId);
         final LocalDateTime end = LocalDateTime.now().plusHours(1);
         List<ViewStats> viewStats = client.getStats(LocalDateTime.now().minusHours(1).format(dtf), end.format(dtf), uris, false);
-        System.out.println("viewStats = " + viewStats);
         return client.getStats(start.format(dtf), end.format(dtf), uris, false)
                 .stream()
                 .findFirst()
@@ -347,7 +345,7 @@ public class EventService {
 
     private Long getIdFromUriString(String uri) {
         try {
-            return Long.parseLong(uri.replace("events/", ""));
+            return Long.parseLong(uri.replace("/events/", ""));
         } catch (NumberFormatException e) {
             log.warn("Не удалось извлечь id из uri.");
             return 0L;

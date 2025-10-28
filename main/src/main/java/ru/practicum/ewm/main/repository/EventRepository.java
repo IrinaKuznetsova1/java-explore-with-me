@@ -11,6 +11,7 @@ import ru.practicum.ewm.main.model.Event;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPredicateExecutor<Event> {
 
@@ -18,20 +19,6 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
 
     Optional<Event> findByIdAndInitiatorId(long eventId, long userId);
 
-    @Query("""
-            SELECT e
-            FROM Event e
-            WHERE (:users is NULL OR e.initiator.id IN :users)
-            AND (:states is NULL OR e.state IN :states)
-            AND (:categories is NULL OR e.category.id IN :categories)
-            AND (COALESCE(:rangeStart, NULL) is NULL OR e.eventDate >= :rangeStart)
-            AND (COALESCE(:rangeEnd, NULL) is NULL OR e.eventDate <= :rangeEnd)
-            """)
-    List<Event> findEventsByAdminsFilters(
-            List<Long> users,
-            List<EventsState> states,
-            List<Integer> categories,
-            LocalDateTime rangeStart,
-            LocalDateTime rangeEnd,
-            Pageable pageable);
+    List<Event> findByIdInOrderByCreatedOnDesc(Set<Long> eventsIds);
+
 }
