@@ -13,6 +13,7 @@ import ru.practicum.ewm.main.enums.EventsSort;
 import ru.practicum.ewm.main.services.EventService;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @RestController
@@ -24,7 +25,7 @@ public class PublicEventController {
     private final EventService eventService;
 
     @GetMapping
-    public List<EventShortDto> findEvents(
+    public Collection<EventShortDto> findEvents(
             @RequestParam(required = false) String text,
             @RequestParam(required = false) List<Integer> categories,
             @RequestParam(required = false) Boolean paid,

@@ -2,6 +2,8 @@ package ru.practicum.ewm.main.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.main.dto.CompilationDto;
 import ru.practicum.ewm.main.dto.NewCompilation;
@@ -18,6 +20,7 @@ import ru.practicum.ewm.stats.dto.ViewStats;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,7 +40,7 @@ public class CompilationService {
         validateCompilationsTitle(newCompilation.getTitle());
         Compilation compilation = compilationMapper.toCompilation(newCompilation);
         if (newCompilation.getEvents() != null && !newCompilation.getEvents().isEmpty()) {
-            compilation.setEvents(getSetEventsWithViews(newCompilation.getEvents()));
+            compilation.setEvents(getSetEventsWithViewsByIds(newCompilation.getEvents()));
             log.info("Добавлены просмотры при создании новой подборки.");
         }
         Compilation savedComp = compilationRepository.save(compilation);
@@ -55,23 +58,55 @@ public class CompilationService {
         Compilation compilation = validateCompilationExisted(compId);
         validateCompilationsTitle(request.getTitle());
         if (request.getEvents() != null && !request.getEvents().isEmpty()) {
-            compilation.setEvents(getSetEventsWithViews(request.getEvents()));
+            compilation.setEvents(getSetEventsWithViewsByIds(request.getEvents()));
             log.info("Актуализированы просмотры при обновлении подборки.");
         }
         if (!compilation.getEvents().isEmpty()) {
-            Set<Long> eventsIds = compilation.getEvents().stream()
-                    .map(Event::getId)
-                    .collect(Collectors.toSet());
-            compilation.setEvents(getSetEventsWithViews(eventsIds));
+            compilation.setEvents(getSetEventsWithViewsByEvents(compilation.getEvents()));
         }
         Compilation updComp = compilationRepository.save(compilationMapper.updateAdminCompilation(request, compilation));
         log.info("Подборка с id: {} обновлена.", compId);
         return compilationMapper.toCompilationDto(updComp);
     }
 
-    private Set<Event> getSetEventsWithViews(Set<Long> eventsIds) {
-        List<Event> events = eventRepository.findByIdInOrderByCreatedOnDesc(eventsIds);
+    public List<CompilationDto> findPublicCompilations(Boolean pinned, int from, int size) {
+        Pageable pageable = PageRequest.of(from / size, size);
+        List<Compilation> compilations;
+        if (pinned != null)
+            compilations = compilationRepository.findByPinned(pinned, pageable);
+        else
+            compilations = compilationRepository.findAll(pageable).getContent();
+
+        if (compilations.isEmpty())
+            return List.of();
+        for (Compilation compilation : compilations) {
+            if (compilation.getEvents() != null && !compilation.getEvents().isEmpty()) {
+                compilation.setEvents(getSetEventsWithViewsByEvents(compilation.getEvents()));
+            }
+        }
+
+        return compilationMapper.toCompilationDtoList(compilations);
+    }
+
+    public CompilationDto findPublicCompilationById(long compId) {
+        Compilation compilation = validateCompilationExisted(compId);
+        if (!compilation.getEvents().isEmpty()) {
+            compilation.setEvents(getSetEventsWithViewsByEvents(compilation.getEvents()));
+        }
+        log.info("Подборка с id: {} найдена.", compilation.getId());
+        return compilationMapper.toCompilationDto(compilation);
+    }
+
+    private Set<Event> getSetEventsWithViewsByIds(Set<Long> eventsIds) {
+        List<Event> events = eventRepository.findByIdIn(eventsIds);
         Map<Long, Long> views = getViewsByUris(events);
+        return events.stream()
+                .peek(event -> event.setViews(views.getOrDefault(event.getId(), 0L)))
+                .collect(Collectors.toSet());
+    }
+
+    private Set<Event> getSetEventsWithViewsByEvents(Set<Event> events) {
+        Map<Long, Long> views = getViewsByUris(events.stream().toList());
         return events.stream()
                 .peek(event -> event.setViews(views.getOrDefault(event.getId(), 0L)))
                 .collect(Collectors.toSet());
@@ -82,7 +117,12 @@ public class CompilationService {
                 .stream()
                 .map(event -> "/events/" + event.getId())
                 .toList();
-        final LocalDateTime start = events.getLast().getCreatedOn();
+        Event eventWithEarliestDate = events.stream().min(Comparator.comparing(Event::getCreatedOn)).orElse(null);
+        final LocalDateTime start;
+        if (eventWithEarliestDate == null)
+            start = LocalDateTime.of(2000, 1, 1, 0, 0);
+        else
+            start = eventWithEarliestDate.getCreatedOn();
         final LocalDateTime end = LocalDateTime.now();
         List<ViewStats> views = client.getStats(start.format(dtf), end.format(dtf), uris, false);
         if (views.isEmpty()) {
@@ -110,7 +150,7 @@ public class CompilationService {
     }
 
     private void validateCompilationsTitle(String title) {
-        if (compilationRepository.existsCompilationByTitle(title)) {
+        if (title != null && compilationRepository.existsCompilationByTitle(title)) {
             log.warn("Выброшено ConflictException: подборка с названием: {} уже существует.", title);
             throw new ConflictException("Подборка с названием: " + title + " уже существует.", "Было нарушено ограничение целостности.");
         }

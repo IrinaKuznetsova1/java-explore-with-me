@@ -319,7 +319,12 @@ public class EventService {
                 .stream()
                 .map(event -> "/events/" + event.getId())
                 .toList();
-        final LocalDateTime start = LocalDateTime.of(2000, 1, 1, 0, 0, 0);
+        final LocalDateTime start;
+        Event eventWithEarliestDate = events.stream().min(Comparator.comparing(Event::getCreatedOn)).orElse(null);
+        if (eventWithEarliestDate == null)
+            start = LocalDateTime.of(2000, 1, 1, 0, 0);
+        else
+            start = eventWithEarliestDate.getCreatedOn();
         final LocalDateTime end = LocalDateTime.now();
         List<ViewStats> views = client.getStats(start.format(dtf), end.format(dtf), uris, true);
         if (views.isEmpty()) {
