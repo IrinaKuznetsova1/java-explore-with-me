@@ -180,7 +180,7 @@ public class EventService {
         validateRangeStartAndRangeEnd(rangeStart, rangeEnd);
         final Pageable pageable;
         if (sort == EventsSort.EVENT_DATE)
-            pageable = PageRequest.of(from / size, size, Sort.by("eventDate").ascending());
+            pageable = PageRequest.of(from / size, size);
         else
             pageable = PageRequest.of(from / size, size);
         Predicate predicate = getPredicateForPublicSearch(text, categories, paid, rangeStart, rangeEnd, onlyAvailable);
@@ -247,8 +247,9 @@ public class EventService {
 
         // проверка запрашиваемых параметров
         if (StringUtils.hasText(text)) {
-            predicate.and(event.annotation.toLowerCase().contains(text.toLowerCase()))
-                    .or(event.description.toLowerCase().contains(text.toLowerCase()));
+            String searchText = text.toLowerCase();
+            predicate.and(event.annotation.toLowerCase().contains(searchText))
+                    .or(event.description.toLowerCase().contains(searchText));
         }
         if (categories != null && !categories.isEmpty())
             predicate.and(event.category.id.in(categories));
@@ -260,7 +261,7 @@ public class EventService {
             predicate.and(event.eventDate.loe(rangeEnd));
         if (rangeStart == null && rangeEnd == null)
             predicate.and(event.eventDate.goe(LocalDateTime.now()));
-        if (onlyAvailable != null)
+        if (onlyAvailable != null && onlyAvailable)
             predicate.and(event.participantLimit.eq(0L))
                     .or(event.participantLimit.gt(event.confirmedRequests));
         return predicate;
