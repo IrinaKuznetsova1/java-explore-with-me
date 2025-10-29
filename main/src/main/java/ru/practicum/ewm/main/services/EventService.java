@@ -180,7 +180,7 @@ public class EventService {
         validateRangeStartAndRangeEnd(rangeStart, rangeEnd);
         final Pageable pageable;
         if (sort == EventsSort.EVENT_DATE)
-            pageable = PageRequest.of(from / size, size, Sort.by("eventDate").descending());
+            pageable = PageRequest.of(from / size, size, Sort.by("eventDate").ascending());
         else
             pageable = PageRequest.of(from / size, size);
         Predicate predicate = getPredicateForPublicSearch(text, categories, paid, rangeStart, rangeEnd, onlyAvailable);
@@ -198,7 +198,7 @@ public class EventService {
             events = events.stream().sorted(Comparator.comparing(Event::getViews).reversed()).toList();
         }
         log.info("Запрашиваемые события найдены в количестве:{}.", events.size());
-        return eventMapper.toEventShortDtoList(events);
+        return List.of();
     }
 
     public EventFullDto getPublicEventById(long eventId, HttpServletRequest request) {
