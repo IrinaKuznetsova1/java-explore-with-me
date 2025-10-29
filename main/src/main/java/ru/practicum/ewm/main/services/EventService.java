@@ -198,7 +198,7 @@ public class EventService {
             events = events.stream().sorted(Comparator.comparing(Event::getViews).reversed()).toList();
         }
         log.info("Запрашиваемые события найдены в количестве:{}.", events.size());
-        return List.of();
+        return eventMapper.toEventShortDtoList(events);
     }
 
     public EventFullDto getPublicEventById(long eventId, HttpServletRequest request) {
