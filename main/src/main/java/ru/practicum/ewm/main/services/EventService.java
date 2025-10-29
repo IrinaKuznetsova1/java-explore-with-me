@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import com.querydsl.core.types.Predicate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import ru.practicum.ewm.main.dto.*;
