@@ -16,7 +16,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         "ru.practicum.ewm.stats.dto"
 })
 public class EwmMainServer {
-
     public static void main(String[] args) {
         SpringApplication.run(EwmMainServer.class, args);
     }

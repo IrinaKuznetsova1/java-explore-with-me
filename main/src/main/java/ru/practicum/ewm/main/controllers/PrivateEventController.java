@@ -42,7 +42,7 @@ public class PrivateEventController {
     @GetMapping("/{eventId}")
     public EventFullDto findEventByIdAndUserId(@PathVariable @Min(1) long eventId,
                                                @PathVariable @Min(1) long userId) {
-        log.info("Получен запрос GET/users/{}/events/{}.", userId, eventId);
+        log.info("Получен запрос GET/users/{}/events/{}", userId, eventId);
         return eventService.findEventByIdAndUserId(eventId, userId);
     }
 
@@ -50,7 +50,7 @@ public class PrivateEventController {
     public EventFullDto updateEventByUser(@Valid @RequestBody @NotNull UpdateEventUserRequest request,
                                           @PathVariable @Min(1) long eventId,
                                           @PathVariable @Min(1) long userId) {
-        log.info("Получен запрос PATCH/users/{}/events/{}.", userId, eventId);
+        log.info("Получен запрос  PATCH/users/{}/events/{}.", userId, eventId);
         return eventService.updateEventByUser(request, eventId, userId);
     }
 

@@ -54,7 +54,7 @@ public class RequestService {
             log.warn("Выброшено ConflictException: нельзя участвовать в неопубликованном событии.");
             throw new ConflictException("Невозможно сохранить запрос.", "Нельзя участвовать в неопубликованном событии.");
         }
-        
+
         long countConfirmedRequests = event.getConfirmedRequests();
         if (event.getParticipantLimit() != 0 && (event.getParticipantLimit() < ++countConfirmedRequests)) {
             log.warn("Выброшено ConflictException: достигнут лимит запросов на участие .");
@@ -70,8 +70,7 @@ public class RequestService {
             newRequest.setStatus(RequestStatus.CONFIRMED);
             event.setConfirmedRequests(countConfirmedRequests + 1);
             eventRepository.save(event);
-        }
-        else
+        } else
             newRequest.setStatus(RequestStatus.PENDING);
 
         Request savedRequest = requestRepository.save(newRequest);
@@ -85,7 +84,7 @@ public class RequestService {
                 .orElseThrow(() -> new NotFoundException("Запрос на участие с id: " + requestId + " не найден.",
                         "Искомый объект не был найден."));
         if (request.getRequester().getId() != userId) {
-           throw  new NotFoundException("Запрос на участие с id: " + requestId + " пользователя с id: " + userId + " не найден.",
+            throw new NotFoundException("Запрос на участие с id: " + requestId + " пользователя с id: " + userId + " не найден.",
                     "Искомый объект не был найден.");
         }
         RequestStatus oldStatus = request.getStatus();
@@ -138,21 +137,21 @@ public class RequestService {
         if (request.getStatus() == RequestStatus.CONFIRMED) {
             requestsToUpdate.forEach(req -> {
                 if (req.getStatus() == RequestStatus.PENDING) {
-                long count = event.getConfirmedRequests();
-                if (count == event.getParticipantLimit()) {
-                    log.warn("Выброшено ConflictException: Достигнут лимит по заявкам на данное событие..");
-                    throw new ConflictException("Достигнут лимит по заявкам на данное событие.", "Для запрошенной операции условия не выполнены.");
-                }
-                req.setStatus(RequestStatus.CONFIRMED);
-                requestRepository.save(req);
-                confirmedRequests.add(req);
-                event.setConfirmedRequests(++count);
-                eventRepository.save(event);
+                    long count = event.getConfirmedRequests();
+                    if (count == event.getParticipantLimit()) {
+                        log.warn("Выброшено ConflictException: Достигнут лимит по заявкам на данное событие..");
+                        throw new ConflictException("Достигнут лимит по заявкам на данное событие.", "Для запрошенной операции условия не выполнены.");
+                    }
+                    req.setStatus(RequestStatus.CONFIRMED);
+                    requestRepository.save(req);
+                    confirmedRequests.add(req);
+                    event.setConfirmedRequests(++count);
                 } else {
-                    log.warn("Выброшено ConflictException: невозможно обновить статус.");
+                    log.warn("Выброшено  ConflictException: невозможно обновить статус.");
                     throw new ConflictException("Выброшено ConflictException: невозможно обновить статус.", "Некорректный запрос.");
                 }
             });
+            eventRepository.save(event);
         }
         return new EventRequestStatusUpdateResult(
                 requestMapper.toParticipationRequestDtoList(confirmedRequests),

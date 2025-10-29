@@ -40,5 +40,4 @@ public class PrivateRequestController {
         log.info("Получен запрос PATCH/users/{}/requests/{}.", userId, requestId);
         return requestService.cancelRequest(userId, requestId);
     }
-
 }

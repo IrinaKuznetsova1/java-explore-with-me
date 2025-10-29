@@ -41,5 +41,4 @@ public class AdminCompilationController {
         log.info("Получен запрос PATCH/admin/compilations/{}.", compId);
         return compilationService.updateCompilationByAdmin(compId, request);
     }
-
 }

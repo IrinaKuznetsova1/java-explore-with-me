@@ -1,6 +1,5 @@
 package ru.practicum.ewm.main.controllers;
 
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +26,7 @@ public class PublicCategoryController {
 
     @GetMapping
     public Collection<CategoryDto> findCategories(@RequestParam(defaultValue = "0") @Min(0) int from,
-                                           @RequestParam(defaultValue = "10") @Min(1) int size) {
+                                                  @RequestParam(defaultValue = "10") @Min(1) int size) {
         log.info("Получен запрос GET/categories?from={}&size={}", from, size);
         return service.findCategories(from, size);
     }

@@ -3,7 +3,6 @@ package ru.practicum.ewm.stats.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
 

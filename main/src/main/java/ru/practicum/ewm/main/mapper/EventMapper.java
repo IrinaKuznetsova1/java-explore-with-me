@@ -7,7 +7,6 @@ import ru.practicum.ewm.main.model.Event;
 import ru.practicum.ewm.main.model.User;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING,
@@ -18,7 +17,7 @@ public interface EventMapper {
     @Mapping(target = "category", source = "category")
     @Mapping(target = "initiator", source = "initiator")
     @Mapping(target = "createdOn", expression = "java(getNow())")
-    @Mapping(target = "state", expression = "java(ru.practicum.ewm.main.enums.EventsState.PENDING)" )
+    @Mapping(target = "state", expression = "java(ru.practicum.ewm.main.enums.EventsState.PENDING)")
     Event toEvent(NewEventDto newEvent, Category category, User initiator);
 
     EventFullDto toEventFullDto(Event event);

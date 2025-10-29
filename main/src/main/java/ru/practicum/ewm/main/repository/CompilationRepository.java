@@ -1,6 +1,5 @@
 package ru.practicum.ewm.main.repository;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,7 +11,6 @@ import ru.practicum.ewm.main.model.Compilation;
 import java.util.List;
 
 public interface CompilationRepository extends JpaRepository<Compilation, Long> {
-
     @Query("""
             SELECT COUNT(c) > 0
             FROM Compilation c
@@ -23,7 +21,8 @@ public interface CompilationRepository extends JpaRepository<Compilation, Long> 
     @EntityGraph(attributePaths = {"events", "events.category", "events.initiator"})
     List<Compilation> findByPinned(boolean pinned, Pageable pageable);
 
-    @Override @NonNull
+    @Override
+    @NonNull
     @EntityGraph(attributePaths = {"events", "events.category", "events.initiator"})
     Page<Compilation> findAll(@NonNull Pageable pageable);
 }

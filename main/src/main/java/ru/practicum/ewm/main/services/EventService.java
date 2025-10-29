@@ -44,7 +44,7 @@ public class EventService {
     public Collection<EventShortDto> findEventsByUserId(long userId, int from, int size) {
         validateUserExisted(userId);
 
-        final PageRequest pageable = PageRequest.of(from, size);
+        final PageRequest pageable = PageRequest.of(from / size, size);
         log.info("Поиск событий пользователя с id:{} c номера страницы {} и c количеством элементов на странице {}.", userId, from, size);
         List<Event> events = eventRepository.findByInitiatorIdOrderByCreatedOnDesc(userId, pageable);
 
@@ -53,7 +53,7 @@ public class EventService {
             return Collections.emptyList();
         }
 
-        Map<Long, Long> views = getViewsByUris(events);
+        Map<Long, Long> views = getViewsByUris(events, true);
         if (views.isEmpty())
             return eventMapper.toEventShortDtoList(events);
         return events.stream()
@@ -76,7 +76,7 @@ public class EventService {
     public EventFullDto findEventByIdAndUserId(long eventId, long userId) {
         validateUserExisted(userId);
         Event event = validateEventExistedByUserId(eventId, userId);
-        event.setViews(getEventsViews(eventId, event.getCreatedOn()));
+        event.setViews(getEventsViews(eventId, event.getCreatedOn(), true));
         return eventMapper.toEventFullDto(event);
     }
 
@@ -114,7 +114,7 @@ public class EventService {
             }
         }
         Event updatedEvent = eventRepository.save(updEventForSave);
-        updatedEvent.setViews(getEventsViews(eventId, event.getCreatedOn()));
+        updatedEvent.setViews(getEventsViews(eventId, event.getCreatedOn(), true));
         log.info("Событие  с id: {} успешно обновлено.", eventId);
         return eventMapper.toEventFullDto(updatedEvent);
     }
@@ -138,7 +138,7 @@ public class EventService {
             }
         }
         Event updEvent = eventRepository.save(eventMapper.updateUserEvent(request, event, category));
-        updEvent.setViews(getEventsViews(eventId, event.getCreatedOn()));
+        updEvent.setViews(getEventsViews(eventId, event.getCreatedOn(), true));
         log.info("Событие с id: {} успешно обновлено.", eventId);
         return eventMapper.toEventFullDto(updEvent);
     }
@@ -160,7 +160,7 @@ public class EventService {
             log.info("События по  заданным параметрам не найдены.");
             return List.of();
         }
-        Map<Long, Long> views = getViewsByUris(events);
+        Map<Long, Long> views = getViewsByUris(events, true);
         events.forEach(event -> event.setViews(views.getOrDefault(event.getId(), 0L)));
         log.info("Запрашиваемые события найдены в количестве: {}.", events.size());
         return eventMapper.toEventFullDtoList(events);
@@ -187,10 +187,9 @@ public class EventService {
         List<Event> events = eventRepository.findAll(predicate, pageable).getContent();
         if (events.isEmpty()) {
             log.info("События по заданным параметрам не найдены.");
-            saveHit(request.getRemoteAddr(), "/events");
             return List.of();
         }
-        Map<Long, Long> views = getViewsByUris(events);
+        Map<Long, Long> views = getViewsByUris(events, true);
         events.forEach(event -> {
             event.setViews(views.getOrDefault(event.getId(), 0L));
             saveHit(request.getRemoteAddr(), request.getRequestURI() + "/" + event.getId());
@@ -206,9 +205,9 @@ public class EventService {
         Event event = validateEventExisted(eventId);
         if (event.getState() != EventsState.PUBLISHED) {
             log.warn("Выброшено NotFoundException: искомый объект не опубликован.");
-            throw new NotFoundException("Событие с id: " + event + " не было найдено.", "Искомый объект не опубликован.");
+            throw new NotFoundException("Событие с id: " + eventId + " не было найдено.", "Искомый объект не опубликован.");
         }
-        event.setViews(getEventsViews(eventId, event.getPublishedOn()));
+        event.setViews(getEventsViews(eventId, event.getPublishedOn(), true));
         saveHit(request.getRemoteAddr(), request.getRequestURI());
         log.info("Запрашиваемое событие с id: {} найдено.", event.getId());
         return eventMapper.toEventFullDto(event);
@@ -260,7 +259,7 @@ public class EventService {
         if (rangeEnd != null)
             predicate.and(event.eventDate.loe(rangeEnd));
         if (rangeStart == null && rangeEnd == null)
-            predicate.and(event.eventDate.loe(LocalDateTime.now()));
+            predicate.and(event.eventDate.goe(LocalDateTime.now()));
         if (onlyAvailable != null)
             predicate.and(event.participantLimit.eq(0L))
                     .or(event.participantLimit.gt(event.confirmedRequests));
@@ -314,7 +313,7 @@ public class EventService {
         }
     }
 
-    private Map<Long, Long> getViewsByUris(List<Event> events) {
+    private Map<Long, Long> getViewsByUris(List<Event> events, boolean uniqueIp) {
         List<String> uris = events
                 .stream()
                 .map(event -> "/events/" + event.getId())
@@ -326,7 +325,7 @@ public class EventService {
         else
             start = eventWithEarliestDate.getCreatedOn();
         final LocalDateTime end = LocalDateTime.now();
-        List<ViewStats> views = client.getStats(start.format(dtf), end.format(dtf), uris, true);
+        List<ViewStats> views = client.getStats(start.format(dtf), end.format(dtf), uris, uniqueIp);
         if (views.isEmpty()) {
             return events.stream()
                     .collect(Collectors.toMap(Event::getId, event -> 0L));
@@ -337,11 +336,10 @@ public class EventService {
                 ));
     }
 
-    private Long getEventsViews(long eventId, LocalDateTime start) {
+    private Long getEventsViews(long eventId, LocalDateTime start, boolean uniqueIp) {
         List<String> uris = List.of("/events/" + eventId);
         final LocalDateTime end = LocalDateTime.now().plusHours(1);
-        List<ViewStats> viewStats = client.getStats(LocalDateTime.now().minusHours(1).format(dtf), end.format(dtf), uris, false);
-        return client.getStats(start.format(dtf), end.format(dtf), uris, false)
+        return client.getStats(start.format(dtf), end.format(dtf), uris, uniqueIp)
                 .stream()
                 .findFirst()
                 .map(ViewStats::getHits)

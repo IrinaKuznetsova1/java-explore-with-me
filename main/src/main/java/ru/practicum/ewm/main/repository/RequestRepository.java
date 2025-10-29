@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RequestRepository extends JpaRepository<Request, Long> {
-
     List<Request> findAllByEventId(long eventId);
 
     List<Request> findAllByIdInAndEventId(List<Long> ids, long eventId);

@@ -46,5 +46,4 @@ public class PublicEventController {
         log.info("Получен запрос GET/events/{}.", id);
         return eventService.getPublicEventById(id, request);
     }
-
 }

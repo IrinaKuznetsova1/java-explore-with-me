@@ -50,7 +50,7 @@ public class CategoryService {
         if (cat.getName().equals(newCategory.getName()))
             return mapper.toCategoryDto(cat);
         if (repository.findByName(newCategory.getName()).isPresent()) {
-            log.warn("Выброшено исключение DuplicatedDataException, категория с указанным названием: {} уже существует.", newCategory.getName());
+            log.warn("Выброшено исключение DuplicatedDataException, категория с указанным названием:  {} уже существует.", newCategory.getName());
             throw new DuplicatedDataException("Категория с указанным названием уже существует.", "Было нарушено ограничение целостности");
         }
         cat.setName(newCategory.getName());

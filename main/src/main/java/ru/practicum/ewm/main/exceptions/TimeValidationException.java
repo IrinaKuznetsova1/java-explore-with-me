@@ -6,11 +6,11 @@ import java.time.LocalDateTime;
 
 @Getter
 public class TimeValidationException extends RuntimeException {
-  private final String reason;
-  private final LocalDateTime timestamp = LocalDateTime.now();
+    private final String reason;
+    private final LocalDateTime timestamp = LocalDateTime.now();
 
-  public TimeValidationException(String reason, String message) {
-    super(message);
-    this.reason = reason;
-  }
+    public TimeValidationException(String reason, String message) {
+        super(message);
+        this.reason = reason;
+    }
 }

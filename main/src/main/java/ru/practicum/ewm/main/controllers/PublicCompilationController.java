@@ -20,8 +20,8 @@ public class PublicCompilationController {
 
     @GetMapping
     public Collection<CompilationDto> findCompilations(@RequestParam(required = false) Boolean pinned,
-                                                      @RequestParam(defaultValue = "0") @Min(0) int from,
-                                                      @RequestParam(defaultValue = "10") @Min(1) int size) {
+                                                       @RequestParam(defaultValue = "0") @Min(0) int from,
+                                                       @RequestParam(defaultValue = "10") @Min(1) int size) {
         log.info("Получен запрос GET/compilations");
         return compilationService.findPublicCompilations(pinned, from, size);
     }

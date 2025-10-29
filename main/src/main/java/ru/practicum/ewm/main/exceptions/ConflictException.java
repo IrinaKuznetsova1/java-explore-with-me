@@ -11,6 +11,6 @@ public class ConflictException extends RuntimeException {
 
     public ConflictException(String message, String reason) {
         super(message);
-        this.reason  = reason;
+        this.reason = reason;
     }
 }
