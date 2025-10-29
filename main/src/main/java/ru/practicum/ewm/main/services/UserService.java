@@ -45,8 +45,8 @@ public class UserService {
     }
 
     public void deleteUser(long userId) {
-        repository.findById(userId).
-                orElseThrow(() -> new NotFoundException("Пользователь с id: " + userId + " не найден.", "Искомый объект не был найден."));
+        repository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id: " + userId + " не найден.", "Искомый объект не был найден."));
         repository.deleteById(userId);
         log.info("Пользователь с id {} удален.", userId);
     }

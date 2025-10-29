@@ -159,8 +159,8 @@ public class RequestService {
     }
 
     private User validateUserExisted(long userId) {
-        return userRepository.findById(userId).
-                orElseThrow(() -> new NotFoundException("Пользователь с id: " + userId + " не найден.", "Искомый объект не был найден."));
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id: " + userId + " не найден.", "Искомый объект не был найден."));
     }
 
     private Event validateEventExistedByUserId(long eventId, long userId) {

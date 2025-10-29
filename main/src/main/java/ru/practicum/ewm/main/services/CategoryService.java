@@ -34,8 +34,8 @@ public class CategoryService {
     }
 
     public void deleteCat(int catId) {
-        repository.findById(catId).
-                orElseThrow(() -> new NotFoundException("Категория с id: " + catId + " не найдена.", "Искомый объект не был найден."));
+        repository.findById(catId)
+                .orElseThrow(() -> new NotFoundException("Категория с id: " + catId + " не найдена.", "Искомый объект не был найден."));
         try {
             repository.deleteById(catId);
         } catch (RuntimeException e) {
@@ -45,8 +45,8 @@ public class CategoryService {
     }
 
     public CategoryDto updateCat(int catId, NewCategoryDto newCategory) {
-        final Category cat = repository.findById(catId).
-                orElseThrow(() -> new NotFoundException("Категория с id: " + catId + " не найдена.", "Искомый объект не был найден."));
+        final Category cat = repository.findById(catId)
+                .orElseThrow(() -> new NotFoundException("Категория с id: " + catId + " не найдена.", "Искомый объект не был найден."));
         if (cat.getName().equals(newCategory.getName()))
             return mapper.toCategoryDto(cat);
         if (repository.findByName(newCategory.getName()).isPresent()) {
@@ -60,8 +60,8 @@ public class CategoryService {
     }
 
     public CategoryDto findById(int catId) {
-        final Category category = repository.findById(catId).
-                orElseThrow(() -> new NotFoundException("Категория с id: " + catId + " не найдена.", "Искомый объект не был найден."));
+        final Category category = repository.findById(catId)
+                .orElseThrow(() -> new NotFoundException("Категория с id: " + catId + " не найдена.", "Искомый объект не был найден."));
         log.info("Категория с id {} найдена.", catId);
         return mapper.toCategoryDto(category);
     }
