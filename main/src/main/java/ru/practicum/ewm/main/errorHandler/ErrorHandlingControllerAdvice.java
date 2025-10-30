@@ -10,10 +10,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.practicum.ewm.main.constants.Constants;
 import ru.practicum.ewm.main.exceptions.*;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -26,7 +26,7 @@ public class ErrorHandlingControllerAdvice {
                 e.getMessage(),
                 e.getReason(),
                 HttpStatus.NOT_FOUND.toString(),
-                e.getTimestamp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), HttpStatus.NOT_FOUND);
+                e.getTimestamp().format(Constants.DTF)), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(DuplicatedDataException.class)
@@ -36,7 +36,7 @@ public class ErrorHandlingControllerAdvice {
                 e.getMessage(),
                 e.getReason(),
                 HttpStatus.CONFLICT.toString(),
-                e.getTimestamp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), HttpStatus.CONFLICT);
+                e.getTimestamp().format(Constants.DTF)), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -47,7 +47,7 @@ public class ErrorHandlingControllerAdvice {
                 e.getMessage(),
                 e.getCause().toString(),
                 HttpStatus.BAD_REQUEST.toString(),
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                LocalDateTime.now().format(Constants.DTF));
         apiError.setErrors(e.getConstraintViolations()
                 .stream()
                 .map(ConstraintViolation::getMessage)
@@ -63,7 +63,7 @@ public class ErrorHandlingControllerAdvice {
                 e.getMessage(),
                 "Неправильно составленный запрос.",
                 HttpStatus.BAD_REQUEST.toString(),
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                LocalDateTime.now().format(Constants.DTF));
         apiError.setErrors(e.getBindingResult().getFieldErrors().stream()
                 .map(DefaultMessageSourceResolvable::getDefaultMessage)
                 .collect(Collectors.toList()));
@@ -83,7 +83,7 @@ public class ErrorHandlingControllerAdvice {
                 e.getMessage(),
                 e.getReason(),
                 HttpStatus.CONFLICT.toString(),
-                e.getTimestamp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), HttpStatus.CONFLICT);
+                e.getTimestamp().format(Constants.DTF)), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(ConflictException.class)
@@ -93,7 +93,7 @@ public class ErrorHandlingControllerAdvice {
                 e.getMessage(),
                 e.getReason(),
                 HttpStatus.CONFLICT.toString(),
-                e.getTimestamp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), HttpStatus.CONFLICT);
+                e.getTimestamp().format(Constants.DTF)), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(ValidationException.class)
@@ -103,6 +103,6 @@ public class ErrorHandlingControllerAdvice {
                 e.getMessage(),
                 e.getReason(),
                 HttpStatus.BAD_REQUEST.toString(),
-                e.getTimestamp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))), HttpStatus.BAD_REQUEST);
+                e.getTimestamp().format(Constants.DTF)), HttpStatus.BAD_REQUEST);
     }
 }

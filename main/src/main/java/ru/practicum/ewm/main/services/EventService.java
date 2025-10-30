@@ -8,7 +8,9 @@ import com.querydsl.core.types.Predicate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import ru.practicum.ewm.main.constants.Constants;
 import ru.practicum.ewm.main.dto.*;
 import ru.practicum.ewm.main.enums.EventsSort;
 import ru.practicum.ewm.main.enums.EventsState;
@@ -24,13 +26,13 @@ import ru.practicum.ewm.stats.dto.EndpointHitNewRequest;
 import ru.practicum.ewm.stats.dto.ViewStats;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
@@ -38,8 +40,8 @@ public class EventService {
 
     private final StatClient client;
     private final EventMapper eventMapper;
-    private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    @Transactional(readOnly = true)
     public Collection<EventShortDto> findEventsByUserId(long userId, int from, int size) {
         validateUserExisted(userId);
 
@@ -72,6 +74,7 @@ public class EventService {
         return eventMapper.toEventFullDto(savedEvent);
     }
 
+    @Transactional(readOnly = true)
     public EventFullDto findEventByIdAndUserId(long eventId, long userId) {
         validateUserExisted(userId);
         Event event = validateEventExistedByUserId(eventId, userId);
@@ -142,6 +145,7 @@ public class EventService {
         return eventMapper.toEventFullDto(updEvent);
     }
 
+    @Transactional(readOnly = true)
     public List<EventFullDto> findEventsByAdmin(
             List<Long> users,
             List<EventsState> states,
@@ -177,11 +181,7 @@ public class EventService {
             int size,
             HttpServletRequest request) {
         validateRangeStartAndRangeEnd(rangeStart, rangeEnd);
-        final Pageable pageable;
-        if (sort == EventsSort.EVENT_DATE)
-            pageable = PageRequest.of(from / size, size);
-        else
-            pageable = PageRequest.of(from / size, size);
+        final Pageable pageable = PageRequest.of(from / size, size);
         Predicate predicate = getPredicateForPublicSearch(text, categories, paid, rangeStart, rangeEnd, onlyAvailable);
         List<Event> events = eventRepository.findAll(predicate, pageable).getContent();
         if (events.isEmpty()) {
@@ -195,6 +195,9 @@ public class EventService {
         });
         if (sort == EventsSort.VIEWS) {
             events = events.stream().sorted(Comparator.comparing(Event::getViews).reversed()).toList();
+        }
+        if (sort == EventsSort.EVENT_DATE) {
+            events = events.stream().sorted(Comparator.comparing(Event::getEventDate)).toList();
         }
         log.info("Запрашиваемые события найдены в количестве:{}.", events.size());
         return eventMapper.toEventShortDtoList(events);
@@ -325,7 +328,7 @@ public class EventService {
         else
             start = eventWithEarliestDate.getCreatedOn();
         final LocalDateTime end = LocalDateTime.now();
-        List<ViewStats> views = client.getStats(start.format(dtf), end.format(dtf), uris, uniqueIp);
+        List<ViewStats> views = client.getStats(start.format(Constants.DTF), end.format(Constants.DTF), uris, uniqueIp);
         if (views.isEmpty()) {
             return events.stream()
                     .collect(Collectors.toMap(Event::getId, event -> 0L));
@@ -339,7 +342,7 @@ public class EventService {
     private Long getEventsViews(long eventId, LocalDateTime start, boolean uniqueIp) {
         List<String> uris = List.of("/events/" + eventId);
         final LocalDateTime end = LocalDateTime.now().plusHours(1);
-        return client.getStats(start.format(dtf), end.format(dtf), uris, uniqueIp)
+        return client.getStats(start.format(Constants.DTF), end.format(Constants.DTF), uris, uniqueIp)
                 .stream()
                 .findFirst()
                 .map(ViewStats::getHits)

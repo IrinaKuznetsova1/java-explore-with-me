@@ -1,10 +1,12 @@
 package ru.practicum.ewm.main.services;
 
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import ru.practicum.ewm.main.constants.Constants;
 import ru.practicum.ewm.main.dto.CompilationDto;
 import ru.practicum.ewm.main.dto.NewCompilation;
 import ru.practicum.ewm.main.dto.UpdateCompilationAdminRequest;
@@ -19,7 +21,6 @@ import ru.practicum.ewm.stats.client.StatClient;
 import ru.practicum.ewm.stats.dto.ViewStats;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +30,12 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class CompilationService {
     private final CompilationRepository compilationRepository;
     private final EventRepository eventRepository;
     private final CompilationMapper compilationMapper;
     private final StatClient client;
-    private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public CompilationDto createCompilation(NewCompilation newCompilation) {
         validateCompilationsTitle(newCompilation.getTitle());
@@ -69,6 +70,7 @@ public class CompilationService {
         return compilationMapper.toCompilationDto(updComp);
     }
 
+    @Transactional(readOnly = true)
     public List<CompilationDto> findPublicCompilations(Boolean pinned, int from, int size) {
         Pageable pageable = PageRequest.of(from / size, size);
         List<Compilation> compilations;
@@ -88,6 +90,7 @@ public class CompilationService {
         return compilationMapper.toCompilationDtoList(compilations);
     }
 
+    @Transactional(readOnly = true)
     public CompilationDto findPublicCompilationById(long compId) {
         Compilation compilation = validateCompilationExisted(compId);
         if (!compilation.getEvents().isEmpty()) {
@@ -124,7 +127,7 @@ public class CompilationService {
         else
             start = eventWithEarliestDate.getCreatedOn();
         final LocalDateTime end = LocalDateTime.now();
-        List<ViewStats> views = client.getStats(start.format(dtf), end.format(dtf), uris, false);
+        List<ViewStats> views = client.getStats(start.format(Constants.DTF), end.format(Constants.DTF), uris, false);
         if (views.isEmpty()) {
             return events.stream()
                     .collect(Collectors.toMap(Event::getId, event -> 0L));

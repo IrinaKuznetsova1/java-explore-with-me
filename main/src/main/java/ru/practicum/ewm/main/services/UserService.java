@@ -1,5 +1,6 @@
 package ru.practicum.ewm.main.services;
 
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -19,10 +20,12 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class UserService {
     private final UserRepository repository;
     private final UserMapper mapper;
 
+    @Transactional(readOnly = true)
     public Collection<UserDto> findUsers(List<Long> ids, int from, int size) {
         final PageRequest pageable = PageRequest.of(from / size, size, Sort.by("id").ascending());
         if (ids == null || ids.isEmpty()) {

@@ -21,8 +21,8 @@ spring:
     level:
       org:
         hibernate:
-          SQL: DEBUG
-          type.descriptor.sql.BasicBinder: TRACE
+          SQL: INFO
+          type.descriptor.sql.BasicBinder: INFO
         springframework:
           orm:
             jpa: INFO

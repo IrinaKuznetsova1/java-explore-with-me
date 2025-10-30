@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.main.dto.CategoryDto;
 import ru.practicum.ewm.main.dto.NewCategoryDto;
 import ru.practicum.ewm.main.exceptions.ConflictException;
@@ -19,6 +20,7 @@ import java.util.Collection;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class CategoryService {
     private final CategoryRepository repository;
     private final CategoryMapper mapper;
@@ -59,6 +61,7 @@ public class CategoryService {
         return mapper.toCategoryDto(updCategory);
     }
 
+    @Transactional(readOnly = true)
     public CategoryDto findById(int catId) {
         final Category category = repository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Категория с id: " + catId + " не найдена.", "Искомый объект не был найден."));
@@ -66,6 +69,7 @@ public class CategoryService {
         return mapper.toCategoryDto(category);
     }
 
+    @Transactional(readOnly = true)
     public Collection<CategoryDto> findCategories(int from, int size) {
         final PageRequest pageable = PageRequest.of(from / size, size, Sort.by("id").ascending());
         log.info("Поиск категорий c номера страницы {} и c количеством элементов на странице {}.", from, size);

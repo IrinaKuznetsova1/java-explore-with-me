@@ -3,6 +3,7 @@ package ru.practicum.ewm.main.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.main.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.ewm.main.dto.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.main.dto.ParticipationRequestDto;
@@ -26,12 +27,14 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class RequestService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final RequestRepository requestRepository;
     private final RequestMapper requestMapper;
 
+    @Transactional(readOnly = true)
     public List<ParticipationRequestDto> findUsersRequests(long userId) {
         validateUserExisted(userId);
         return requestMapper.toParticipationRequestDtoList(requestRepository.findByRequesterId(userId));
@@ -100,6 +103,7 @@ public class RequestService {
         return requestMapper.toParticipationRequestDto(updRequest);
     }
 
+    @Transactional(readOnly = true)
     public List<ParticipationRequestDto> findRequests(long eventId, long userId) {
         validateUserExisted(userId);
         validateEventExistedByUserId(eventId, userId);
