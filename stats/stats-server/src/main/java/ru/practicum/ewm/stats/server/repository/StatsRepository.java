@@ -28,4 +28,5 @@ public interface StatsRepository extends JpaRepository<EndpointHit, Long> {
             ORDER BY COUNT(e.ip) DESC
             """)
     List<ViewStats> findAllViewStats(LocalDateTime start, LocalDateTime end, List<String> uris);
+
 }

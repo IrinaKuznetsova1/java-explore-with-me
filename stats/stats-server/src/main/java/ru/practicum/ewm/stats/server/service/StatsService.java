@@ -3,7 +3,6 @@ package ru.practicum.ewm.stats.server.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.ewm.stats.dto.EndpointHitDto;
 import ru.practicum.ewm.stats.dto.EndpointHitNewRequest;
 import ru.practicum.ewm.stats.dto.ViewStats;
 import ru.practicum.ewm.stats.server.repository.StatsRepository;
@@ -13,6 +12,7 @@ import ru.practicum.ewm.stats.server.mapper.StatsMapper;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,12 +22,12 @@ public class StatsService {
     private final StatsMapper statsMapper;
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public EndpointHitDto create(EndpointHitNewRequest endpointHitNewRequest) {
+    public void create(EndpointHitNewRequest endpointHitNewRequest) {
         if (endpointHitNewRequest == null) {
             log.warn("Невозможно сохранить в статистику просмотр, который равен null.");
             throw new IllegalArgumentException("Невозможно сохранить в статистику endpointHitNewRequest, который равен null.");
         }
-        return statsMapper.toEndpointHitDto(repository.save(statsMapper.toEndpointHit(endpointHitNewRequest)));
+        repository.save(statsMapper.toEndpointHit(endpointHitNewRequest));
     }
 
     public List<ViewStats> getStats(String start, String end, List<String> uris, boolean unique) {
@@ -37,6 +37,11 @@ public class StatsService {
         if (endDate.isBefore(startDate)) {
             log.warn("Получить статистику невозможно: дата end не может быть раньше даты start.");
             throw new TimeValidationException("end", "Дата end не может быть раньше даты start.");
+        }
+
+        if (uris != null) {
+            Optional<String> uri = uris.stream().filter(string -> !string.equals("/events")).findAny();
+            if (uris.isEmpty() || uri.isEmpty()) uris = null;
         }
 
         if (unique) {

@@ -1,0 +1,80 @@
+package ru.practicum.ewm.main.services;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.ewm.main.dto.CategoryDto;
+import ru.practicum.ewm.main.dto.NewCategoryDto;
+import ru.practicum.ewm.main.exceptions.ConflictException;
+import ru.practicum.ewm.main.exceptions.DuplicatedDataException;
+import ru.practicum.ewm.main.exceptions.NotFoundException;
+import ru.practicum.ewm.main.mapper.CategoryMapper;
+import ru.practicum.ewm.main.model.Category;
+import ru.practicum.ewm.main.repository.CategoryRepository;
+import ru.practicum.ewm.main.repository.EventRepository;
+
+import java.util.Collection;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional
+public class CategoryService {
+    private final CategoryRepository categoryRepository;
+    private final EventRepository eventRepository;
+    private final CategoryMapper mapper;
+
+    public CategoryDto create(NewCategoryDto newCategory) {
+        if (categoryRepository.findByName(newCategory.getName()).isPresent()) {
+            log.warn("Выброшено исключение DuplicatedDataException, категория с указанным названием: {} уже существует.", newCategory.getName());
+            throw new DuplicatedDataException("Категория с указанным названием уже существует.", "Было нарушено ограничение целостности");
+        }
+        final Category category = categoryRepository.save(mapper.toCategory(newCategory));
+        log.info("Категория успешно сохранена.");
+        return mapper.toCategoryDto(category);
+    }
+
+    public void deleteCat(int catId) {
+        categoryRepository.findById(catId)
+                .orElseThrow(() -> new NotFoundException("Категория с id: " + catId + " не найдена.", "Искомый объект не был найден."));
+        if (eventRepository.findByCategoryId(catId).isPresent()) {
+            log.warn("Выброшено ConflictException: нельзя удалить категорию, если ее значение используется в других таблицах.");
+            throw new ConflictException("Нельзя удалить категорию, если ее значение используется в других таблицах.", "Было нарушено ограничение целостности.");
+        }
+        categoryRepository.deleteById(catId);
+        log.info("Категория с id {} удалена.", catId);
+    }
+
+    public CategoryDto updateCat(int catId, NewCategoryDto newCategory) {
+        final Category cat = categoryRepository.findById(catId)
+                .orElseThrow(() -> new NotFoundException("Категория с id: " + catId + " не найдена.", "Искомый объект не был найден."));
+        if (cat.getName().equals(newCategory.getName()))
+            return mapper.toCategoryDto(cat);
+        if (categoryRepository.findByName(newCategory.getName()).isPresent()) {
+            log.warn("Выброшено исключение DuplicatedDataException, категория с указанным названием:  {} уже существует.", newCategory.getName());
+            throw new DuplicatedDataException("Категория с указанным названием уже существует.", "Было нарушено ограничение целостности");
+        }
+        cat.setName(newCategory.getName());
+        final Category updCategory = categoryRepository.save(cat);
+        log.info("Категория с id {} обновлена.", catId);
+        return mapper.toCategoryDto(updCategory);
+    }
+
+    @Transactional(readOnly = true)
+    public CategoryDto findById(int catId) {
+        final Category category = categoryRepository.findById(catId)
+                .orElseThrow(() -> new NotFoundException("Категория с id: " + catId + " не найдена.", "Искомый объект не был найден."));
+        log.info("Категория с id {} найдена.", catId);
+        return mapper.toCategoryDto(category);
+    }
+
+    @Transactional(readOnly = true)
+    public Collection<CategoryDto> findCategories(int from, int size) {
+        final PageRequest pageable = PageRequest.of(from / size, size, Sort.by("id").ascending());
+        log.info("Поиск категорий c номера страницы {} и c количеством элементов на странице {}.", from, size);
+        return mapper.toCategoryDtoList(categoryRepository.findAll(pageable).getContent());
+    }
+}
