@@ -8,9 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.ewm.main.dto.CompilationDto;
-import ru.practicum.ewm.main.dto.NewCompilation;
-import ru.practicum.ewm.main.dto.UpdateCompilationAdminRequest;
+import ru.practicum.ewm.main.dto.responses.CompilationDto;
+import ru.practicum.ewm.main.dto.newRequests.NewCompilation;
+import ru.practicum.ewm.main.dto.updateRequests.UpdateCompilationAdminRequest;
 import ru.practicum.ewm.main.services.CompilationService;
 
 @RestController

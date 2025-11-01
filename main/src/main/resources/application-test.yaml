@@ -1,0 +1,26 @@
+
+stats-server.url: http://localhost:9090
+spring:
+  datasource:
+    driverClassName: org.h2.Driver
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    username: u
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+      show-sql: true
+    properties:
+      hibernate.format_sql: true
+      dialect: org.hibernate.dialect.H2Dialect
+
+  logging:
+    level:
+      org:
+        hibernate:
+          SQL: INFO
+          type.descriptor.sql.BasicBinder: INFO
+        springframework:
+          orm:
+            jpa: INFO

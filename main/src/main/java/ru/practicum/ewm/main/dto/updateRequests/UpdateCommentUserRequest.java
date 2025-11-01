@@ -1,0 +1,13 @@
+package ru.practicum.ewm.main.dto.updateRequests;
+
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import ru.practicum.ewm.main.enums.CommentState;
+
+@Getter
+@AllArgsConstructor
+public class UpdateCommentUserRequest {
+    @Size(max = 2000, message = "количество символов поля 'text' - 2000.")
+    private String text;
+}

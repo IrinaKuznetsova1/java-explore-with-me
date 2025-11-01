@@ -5,6 +5,10 @@ import lombok.*;
 import ru.practicum.ewm.main.enums.EventsState;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "events")
@@ -13,6 +17,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
+@Builder
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,7 +55,9 @@ public class Event {
     @Column(nullable = false)
     private boolean paid;
     @Column(name = "request_moderation", nullable = false)
-    private boolean requestModeration;
+    private boolean requestModeration = true;
+    @Column(name = "allow_comments", nullable = false)
+    private boolean allowComments;
 
     @Column(name = "participant_limit", nullable = false)
     private long participantLimit;
@@ -58,4 +65,8 @@ public class Event {
     private long confirmedRequests = 0;
     @Transient
     private long views;
+
+    @OneToMany(mappedBy = "event", fetch = FetchType.EAGER)
+    @Builder.Default
+    private List<Comment> comments = new ArrayList<>();
 }

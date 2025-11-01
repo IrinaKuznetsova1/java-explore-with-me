@@ -4,7 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.ReportingPolicy;
-import ru.practicum.ewm.main.dto.ParticipationRequestDto;
+import ru.practicum.ewm.main.dto.responses.ParticipationRequestDto;
 import ru.practicum.ewm.main.model.Request;
 
 import java.util.List;

@@ -7,8 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.ewm.main.dto.NewUserRequest;
-import ru.practicum.ewm.main.dto.UserDto;
+import ru.practicum.ewm.main.dto.newRequests.NewUserRequest;
+import ru.practicum.ewm.main.dto.responses.UserDto;
 import ru.practicum.ewm.main.services.UserService;
 
 import java.util.Collection;
