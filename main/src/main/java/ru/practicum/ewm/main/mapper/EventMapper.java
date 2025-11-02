@@ -24,7 +24,6 @@ public interface EventMapper {
     @Mapping(target = "state", expression = "java(ru.practicum.ewm.main.enums.EventsState.PENDING)")
     Event toEvent(NewEventDto newEvent, Category category, User initiator);
 
-    @Mapping(target = "comments", source = "comments")
     EventFullDto toEventFullDto(Event event);
 
     List<EventFullDto> toEventFullDtoList(List<Event> events);

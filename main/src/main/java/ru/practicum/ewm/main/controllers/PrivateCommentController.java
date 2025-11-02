@@ -11,9 +11,12 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.main.dto.newRequests.NewComment;
 import ru.practicum.ewm.main.dto.responses.CommentDto;
 import ru.practicum.ewm.main.dto.updateRequests.UpdateCommentUserRequest;
+import ru.practicum.ewm.main.enums.CommentSort;
+import ru.practicum.ewm.main.enums.CommentState;
 import ru.practicum.ewm.main.services.CommentService;
 
 import java.util.Collection;
+import java.util.List;
 
 @RestController
 @RequestMapping(path = "/users/{userid}/comments")
@@ -52,13 +55,15 @@ public class PrivateCommentController {
     public CommentDto findComment(@PathVariable @Min(1) long userId,
                                   @PathVariable @Min(1) long comId) {
         log.info("Получен запрос GET/users/{}/comments/{}.", userId, comId);
-        return commentService.findCommentById(userId, comId);
+        return commentService.findCommentByIdUser(userId, comId);
     }
 
     @GetMapping
-    public Collection<CommentDto> findCommentsByAuthor(@PathVariable @Min(1) long userId) {
+    public Collection<CommentDto> findCommentsByAuthor(@PathVariable @Min(1) long userId,
+                                                       @RequestParam(defaultValue = "0") @Min(0) int from,
+                                                       @RequestParam(defaultValue = "10") @Min(1) int size) {
         log.info("Получен запрос GET/users/{}/comments", userId);
-        return commentService.findCommentsByAuthor(userId);
+        return commentService.findCommentsByAuthor(userId, from, size);
     }
 
     @PatchMapping("/{comId}/addLike")

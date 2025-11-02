@@ -16,6 +16,7 @@ import java.util.Set;
 @Setter
 @ToString
 @Builder
+@EqualsAndHashCode(of = "id")
 public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

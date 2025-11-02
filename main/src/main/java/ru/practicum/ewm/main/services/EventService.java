@@ -16,6 +16,7 @@ import ru.practicum.ewm.main.dto.responses.EventFullDto;
 import ru.practicum.ewm.main.dto.responses.EventShortDto;
 import ru.practicum.ewm.main.dto.updateRequests.UpdateEventAdminRequest;
 import ru.practicum.ewm.main.dto.updateRequests.UpdateEventUserRequest;
+import ru.practicum.ewm.main.enums.CommentState;
 import ru.practicum.ewm.main.enums.EventsSort;
 import ru.practicum.ewm.main.enums.EventsState;
 import ru.practicum.ewm.main.enums.StateActionAdmin;
@@ -23,6 +24,7 @@ import ru.practicum.ewm.main.exceptions.*;
 import ru.practicum.ewm.main.mapper.EventMapper;
 import ru.practicum.ewm.main.model.*;
 import ru.practicum.ewm.main.repository.CategoryRepository;
+import ru.practicum.ewm.main.repository.CommentRepository;
 import ru.practicum.ewm.main.repository.EventRepository;
 import ru.practicum.ewm.main.repository.UserRepository;
 import ru.practicum.ewm.stats.client.StatClient;
@@ -41,6 +43,7 @@ public class EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final CommentRepository commentRepository;
 
     private final StatClient client;
     private final EventMapper eventMapper;
@@ -83,6 +86,8 @@ public class EventService {
         validateUserExisted(userId);
         Event event = validateEventExistedByUserId(eventId, userId);
         event.setViews(getEventsViews(eventId, event.getCreatedOn(), true));
+        if (event.isAllowComments())
+            event.setCountOfComments(commentRepository.countByEventIdAndState(eventId, CommentState.PUBLISHED));
         return eventMapper.toEventFullDto(event);
     }
 
@@ -121,6 +126,8 @@ public class EventService {
         }
         Event updatedEvent = eventRepository.save(updEventForSave);
         updatedEvent.setViews(getEventsViews(eventId, event.getCreatedOn(), true));
+        if (updatedEvent.isAllowComments())
+            updatedEvent.setCountOfComments(commentRepository.countByEventIdAndState(eventId, CommentState.PUBLISHED));
         log.info("Событие  с id: {} успешно обновлено.", eventId);
         return eventMapper.toEventFullDto(updatedEvent);
     }
@@ -145,6 +152,8 @@ public class EventService {
         }
         Event updEvent = eventRepository.save(eventMapper.updateUserEvent(request, event, category));
         updEvent.setViews(getEventsViews(eventId, event.getCreatedOn(), true));
+        if (updEvent.isAllowComments())
+            updEvent.setCountOfComments(commentRepository.countByEventIdAndState(eventId, CommentState.PUBLISHED));
         log.info("Событие с id: {} успешно обновлено.", eventId);
         return eventMapper.toEventFullDto(updEvent);
     }
@@ -168,7 +177,11 @@ public class EventService {
             return List.of();
         }
         Map<Long, Long> views = getViewsByUris(events, true);
-        events.forEach(event -> event.setViews(views.getOrDefault(event.getId(), 0L)));
+        events.forEach(event -> {
+            event.setViews(views.getOrDefault(event.getId(), 0L));
+            if (event.isAllowComments())
+                event.setCountOfComments(commentRepository.countByEventIdAndState(event.getId(), CommentState.PUBLISHED));
+        });
         log.info("Запрашиваемые события найдены в количестве: {}.", events.size());
         return eventMapper.toEventFullDtoList(events);
     }
@@ -196,6 +209,8 @@ public class EventService {
         events.forEach(event -> {
             event.setViews(views.getOrDefault(event.getId(), 0L));
             saveHit(request.getRemoteAddr(), request.getRequestURI() + "/" + event.getId());
+            if (event.isAllowComments())
+                event.setCountOfComments(commentRepository.countByEventIdAndState(event.getId(), CommentState.PUBLISHED));
         });
         if (sort == EventsSort.VIEWS) {
             events = events.stream().sorted(Comparator.comparing(Event::getViews).reversed()).toList();
@@ -215,6 +230,8 @@ public class EventService {
         }
         event.setViews(getEventsViews(eventId, event.getPublishedOn(), true));
         saveHit(request.getRemoteAddr(), request.getRequestURI());
+        if (event.isAllowComments())
+            event.setCountOfComments(commentRepository.countByEventIdAndState(eventId, CommentState.PUBLISHED));
         log.info("Запрашиваемое событие с id: {} найдено.", event.getId());
         return eventMapper.toEventFullDto(event);
     }

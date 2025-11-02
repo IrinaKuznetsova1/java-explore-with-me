@@ -1,25 +1,32 @@
 package ru.practicum.ewm.main.services;
 
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.main.dto.newRequests.NewComment;
 import ru.practicum.ewm.main.dto.responses.CommentDto;
 import ru.practicum.ewm.main.dto.updateRequests.UpdateCommentAdminRequest;
 import ru.practicum.ewm.main.dto.updateRequests.UpdateCommentUserRequest;
+import ru.practicum.ewm.main.enums.CommentSort;
 import ru.practicum.ewm.main.enums.CommentState;
 import ru.practicum.ewm.main.enums.EventsState;
 import ru.practicum.ewm.main.exceptions.ConflictException;
 import ru.practicum.ewm.main.exceptions.NotFoundException;
+import ru.practicum.ewm.main.exceptions.ValidationException;
 import ru.practicum.ewm.main.mapper.CommentMapper;
-import ru.practicum.ewm.main.model.Comment;
-import ru.practicum.ewm.main.model.Event;
-import ru.practicum.ewm.main.model.User;
+import ru.practicum.ewm.main.model.*;
 import ru.practicum.ewm.main.repository.CommentRepository;
 import ru.practicum.ewm.main.repository.EventRepository;
 import ru.practicum.ewm.main.repository.UserRepository;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -45,7 +52,6 @@ public class CommentService {
         }
 
         Comment comment = commentRepository.save(commentMapper.toComment(newComment, event, author));
-        event.getComments().add(comment);
         log.info("Новый комментарий сохранен с id: {}", comment.getId());
         return commentMapper.toCommentDto(comment);
     }
@@ -71,18 +77,89 @@ public class CommentService {
     }
 
     @Transactional(readOnly = true)
-    public CommentDto findCommentById(long authorId, long comId) {
+    public CommentDto findCommentByIdUser(long authorId, long comId) {
         Comment comment = validateCommentExistedByUserId(comId, authorId);
+        log.info("Комментарий с id: {} найден", comment.getId());
+        return commentMapper.toCommentDto(comment);
+    }
+
+    @Transactional(readOnly = true)
+    public CommentDto findCommentByIdAdmin(long comId) {
+        Comment comment = validateCommentExisted(comId);
         log.info("Комментарий с id: {} найден.", comment.getId());
         return commentMapper.toCommentDto(comment);
     }
 
     @Transactional(readOnly = true)
-    public List<CommentDto> findCommentsByAuthor(long authorId) {
+    public CommentDto findCommentByIdPublic(long eventId, long comId) {
+        validateEventExisted(eventId);
+        Comment comment = commentRepository.findByIdAndEventId(comId, eventId)
+                        .orElseThrow(() -> new NotFoundException(
+                                "Комментарий с id: " + comId + " события с id: " + eventId + " не найден.",
+                                "Искомый объект не был найден."));
+        if (comment.getState() != CommentState.PUBLISHED) {
+            log.warn("Выброшено ConflictException: запрашиваемый комментарий не был опубликован.");
+            throw new ConflictException(
+                    "Запрашиваемый комментарий не был опубликован.",
+                    "Для запрошенной операции условия не выполнены.");
+        }
+        log.info("Комментарий  с id: {} найден.", comment.getId());
+        return commentMapper.toCommentDto(comment);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CommentDto> findCommentsByAuthor(long authorId, int from, int size) {
         validateUserExisted(authorId);
-        List<Comment> comments = commentRepository.findByAuthorIdOrderByCreatedDesc(authorId);
+        final Pageable pageable = PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "created"));
+        List<Comment> comments = commentRepository.findByAuthorId(authorId, pageable);
         log.info("Комментарии найдены в количестве: {}.", comments.size());
         return commentMapper.toCommentDtoList(comments);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CommentDto> findCommentsByAdmin(List<Long> users,
+                                                List<CommentState> states,
+                                                List<Long> events,
+                                                LocalDateTime rangeStart,
+                                                LocalDateTime rangeEnd,
+                                                int from,
+                                                int size) {
+        if (rangeStart != null && rangeEnd != null && rangeEnd.isBefore(rangeStart)) {
+            log.info("Выброшено ValidationException: дата start должна быть раньше даты end.");
+            throw new ValidationException("Дата start должна быть раньше даты end.", "Для запрошенной операции условия не выполнены");
+        }
+        final Pageable pageable = PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "created"));
+        Predicate predicate = getPredicateForAdminSearch(users, states, events, rangeStart, rangeEnd);
+
+        List<Comment> comments = commentRepository.findAll(predicate, pageable).getContent();
+        if (comments.isEmpty()) {
+            log.info("Комментарии по заданным параметрам не найдены.");
+            return List.of();
+        }
+        log.info("Запрашиваемые события найдены в количестве: {}.", comments.size());
+        return commentMapper.toCommentDtoList(comments);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CommentDto> findCommentsPublic(long eventId,
+                                               int from,
+                                               int size,
+                                               CommentSort sort) {
+        validateEventExisted(eventId);
+        final Pageable pageable = PageRequest.of(from / size, size,
+                Sort.by(Sort.Direction.DESC, "created"));
+        List<Comment> comments = commentRepository.findByEventIdAndState(eventId, CommentState.PUBLISHED, pageable);
+        List<CommentDto> commentDtoList = commentMapper.toCommentDtoList(comments);
+        if (sort == CommentSort.USEFUL) {
+            commentDtoList = commentDtoList
+                    .stream()
+                    .sorted(Comparator.comparing(CommentDto::getUseful).reversed())
+                    .toList();
+            log.info("Комментарии найдены в количестве: {}", commentDtoList.size());
+            return commentDtoList;
+        }
+        log.info("Комментарии найдены в количестве: {}", commentDtoList.size());
+        return commentDtoList;
     }
 
     public CommentDto addLikeToComment(long userId, long comId) {
@@ -173,6 +250,28 @@ public class CommentService {
         Comment updatedComment = commentRepository.save(comment);
         log.info("Дизлайк удален, новое количество дизлайков: {}", updatedComment.getDislikes().size());
         return commentMapper.toCommentDto(updatedComment);
+    }
+
+    private Predicate getPredicateForAdminSearch(List<Long> users,
+                                                 List<CommentState> states,
+                                                 List<Long> events,
+                                                 LocalDateTime rangeStart,
+                                                 LocalDateTime rangeEnd) {
+        QComment comment = QComment.comment;
+        BooleanBuilder predicate = new BooleanBuilder();
+
+        // проверка запрашиваемых параметров
+        if (users != null && !users.isEmpty())
+            predicate.and(comment.author.id.in(users));
+        if (states != null && !states.isEmpty())
+            predicate.and(comment.state.in(states));
+        if (events != null && !events.isEmpty())
+            predicate.and(comment.event.id.in(events));
+        if (rangeStart != null)
+            predicate.and(comment.created.goe(rangeStart));
+        if (rangeEnd != null)
+            predicate.and(comment.created.loe(rangeEnd));
+        return predicate;
     }
 
     private User validateUserExisted(long userId) {

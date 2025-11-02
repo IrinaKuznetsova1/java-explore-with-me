@@ -41,5 +41,5 @@ public class EventFullDto {
     private long participantLimit;
     private long views;
 
-    private List<CommentDto> comments;
+    private long countOfComments;
 }

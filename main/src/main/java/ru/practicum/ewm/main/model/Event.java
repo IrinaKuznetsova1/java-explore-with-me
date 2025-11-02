@@ -65,8 +65,6 @@ public class Event {
     private long confirmedRequests = 0;
     @Transient
     private long views;
-
-    @OneToMany(mappedBy = "event", fetch = FetchType.EAGER)
-    @Builder.Default
-    private List<Comment> comments = new ArrayList<>();
+    @Transient
+    private long countOfComments;
 }
