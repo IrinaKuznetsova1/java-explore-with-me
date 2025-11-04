@@ -10573,7 +10573,7 @@
 	"variable": [
 		{
 			"key": "base_url",
-			"value": ""
+			"value": "http://localhost:8080"
 		},
 		{
 			"key": "uid",
@@ -10589,7 +10589,7 @@
 		},
 		{
 			"key": "notExistId",
-			"value": ""
+			"value": "10000000000"
 		},
 		{
 			"key": "cid",
