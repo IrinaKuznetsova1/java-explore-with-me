@@ -43,8 +43,8 @@ public class CommentService {
         User author = validateUserExisted(authorId);
         Event event = validateEventExisted(eventId);
         if (event.getState() != EventsState.PUBLISHED) {
-            log.warn("Выброшено ConflictException: комментировать можно только опублкованные события.");
-            throw new ConflictException("Комментировать можно только опублкованные события.", "Для запрошенной операции условия не выполнены.");
+            log.warn("Выброшено ConflictException: комментировать можно только опубликованные события.");
+            throw new ConflictException("Комментировать можно только опубликованные события.", "Для запрошенной операции условия не выполнены.");
         }
         if (!event.isAllowComments()) {
             log.warn("Выброшено ConflictException: комментирование события с id: {} запрещено.", eventId);
@@ -57,7 +57,12 @@ public class CommentService {
     }
 
     public CommentDto updateCommentByUser(long authorId, long comId, UpdateCommentUserRequest request) {
-        Comment comment = validateCommentExistedByUserId(comId, authorId);
+        validateUserExisted(authorId);
+        Comment comment = validateCommentExisted(comId);
+        if (comment.getAuthor().getId() != authorId) {
+            log.warn("Выброшено ConflictException: обновить комментарий может только автор комментария.");
+            throw new ConflictException("Oбновить комментарий может только автор комментария.", "Для запрошенной операции условия не выполнены.");
+        }
         Comment updComment = commentRepository.save(commentMapper.updateCommentUser(request, comment));
         log.info("Комментарий с id: {} обновлен.", updComment.getId());
         return commentMapper.toCommentDto(updComment);
@@ -71,7 +76,12 @@ public class CommentService {
     }
 
     public void deleteComment(long authorId, long comId) {
-        validateCommentExistedByUserId(comId, authorId);
+        validateUserExisted(authorId);
+        Comment comment = validateCommentExisted(comId);
+        if (comment.getAuthor().getId() != authorId) {
+            log.warn("Выброшено ConflictException: удалить комментарий может только автор комментария.");
+            throw new ConflictException("Удалить комментарий может только автор комментария.", "Для запрошенной операции условия не выполнены.");
+        }
         commentRepository.deleteById(comId);
         log.info("Комментарий с id: {} удален.", comId);
     }
@@ -94,9 +104,9 @@ public class CommentService {
     public CommentDto findCommentByIdPublic(long eventId, long comId) {
         validateEventExisted(eventId);
         Comment comment = commentRepository.findByIdAndEventId(comId, eventId)
-                        .orElseThrow(() -> new NotFoundException(
-                                "Комментарий с id: " + comId + " события с id: " + eventId + " не найден.",
-                                "Искомый объект не был найден."));
+                .orElseThrow(() -> new NotFoundException(
+                        "Комментарий с id: " + comId + " события с id: " + eventId + " не найден.",
+                        "Искомый объект не был найден."));
         if (comment.getState() != CommentState.PUBLISHED) {
             log.warn("Выброшено ConflictException: запрашиваемый комментарий не был опубликован.");
             throw new ConflictException(
@@ -175,7 +185,7 @@ public class CommentService {
         }
         if (comment.getLikes().contains(user)) {
             log.warn("Выброшено ConflictException: лайк уже добавлен.");
-            throw new ConflictException("Лайк пользователя с id: " + userId + "к комментарию с id: " + comId + " уже добавлен.",
+            throw new ConflictException("Лайк пользователя с id: " + userId + " к комментарию с id: " + comId + " уже добавлен.",
                     "Пользователь может добавить только один лайк.");
         }
         comment.getLikes().add(user);
@@ -198,7 +208,7 @@ public class CommentService {
         }
         if (!comment.getLikes().contains(user)) {
             log.warn("Выброшено ConflictException: лайк с userId: {} не существует.", userId);
-            throw new ConflictException("Лайк пользователя с id: " + userId + "к комментарию с id: " + comId + " отсутствует.",
+            throw new ConflictException("Лайк пользователя с id: " + userId + " к комментарию с id: " + comId + " отсутствует.",
                     "Пользователь не может удалить несуществующий лайк.");
         }
         comment.getLikes().remove(user);
@@ -220,7 +230,7 @@ public class CommentService {
         }
         if (comment.getDislikes().contains(user)) {
             log.warn("Выброшено ConflictException: дизлайк уже добавлен.");
-            throw new ConflictException("Дизлайк пользователя с id: " + userId + "к комментарию с id: " + comId + " уже добавлен.",
+            throw new ConflictException("Дизлайк пользователя с id: " + userId + " к комментарию с id: " + comId + " уже добавлен.",
                     "Пользователь может добавить только один дизлайк.");
         }
         comment.getDislikes().add(user);
@@ -243,7 +253,7 @@ public class CommentService {
         }
         if (!comment.getDislikes().contains(user)) {
             log.warn("Выброшено ConflictException: дизлайк с userId: {} не существует.", userId);
-            throw new ConflictException("Дизлайк пользователя с id: " + userId + "к комментарию с id: " + comId + " отсутствует.",
+            throw new ConflictException("Дизлайк пользователя с id: " + userId + " к комментарию с id: " + comId + " отсутствует.",
                     "Пользователь не может удалить несуществующий дизлайк.");
         }
         comment.getDislikes().remove(user);

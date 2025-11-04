@@ -5,12 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import ru.practicum.ewm.main.enums.EventsState;
 import ru.practicum.ewm.main.model.Category;
-import ru.practicum.ewm.main.model.Comment;
 import ru.practicum.ewm.main.model.Location;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -40,6 +37,5 @@ public class EventFullDto {
     private long confirmedRequests;
     private long participantLimit;
     private long views;
-
     private long countOfComments;
 }

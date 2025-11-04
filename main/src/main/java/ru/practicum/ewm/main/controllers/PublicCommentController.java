@@ -24,7 +24,7 @@ public class PublicCommentController {
             @PathVariable @Min(1) long eventId,
             @RequestParam(defaultValue = "0") @Min(0) int from,
             @RequestParam(defaultValue = "10") @Min(1) int size,
-            @RequestParam(defaultValue = "COMMENT_DATE") @Min(1) CommentSort sort) {
+            @RequestParam(defaultValue = "COMMENT_DATE") CommentSort sort) {
         log.info("Получен запрос GET/events/{}/comments", eventId);
         return commentService.findCommentsPublic(eventId, from, size, sort);
     }

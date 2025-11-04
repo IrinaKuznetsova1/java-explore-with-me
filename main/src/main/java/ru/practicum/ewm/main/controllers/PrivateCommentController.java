@@ -11,15 +11,12 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.main.dto.newRequests.NewComment;
 import ru.practicum.ewm.main.dto.responses.CommentDto;
 import ru.practicum.ewm.main.dto.updateRequests.UpdateCommentUserRequest;
-import ru.practicum.ewm.main.enums.CommentSort;
-import ru.practicum.ewm.main.enums.CommentState;
 import ru.practicum.ewm.main.services.CommentService;
 
 import java.util.Collection;
-import java.util.List;
 
 @RestController
-@RequestMapping(path = "/users/{userid}/comments")
+@RequestMapping(path = "/users/{userId}/comments")
 @RequiredArgsConstructor
 @Validated
 @Slf4j

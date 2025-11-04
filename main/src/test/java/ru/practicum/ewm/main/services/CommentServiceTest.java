@@ -162,6 +162,10 @@ class CommentServiceTest {
         long notExistComId = 1000000L;
         assertThrows(NotFoundException.class, () -> commentService.updateCommentByUser(userId, notExistComId,
                 new UpdateCommentUserRequest(newText)));
+        //выбрасывает ConflictException, если обновляет не автор комментария
+        long otherUserId = userRepository.save(new User(0L, "otherEmail@email.com", "otherUserName")).getId();
+        assertThrows(ConflictException.class, () -> commentService.updateCommentByUser(otherUserId, commentDto.getId(),
+                new UpdateCommentUserRequest(newText)));
     }
 
     @Test
@@ -206,6 +210,10 @@ class CommentServiceTest {
         assertThrows(NotFoundException.class, () -> commentService.deleteComment(notExistUserId, commentDto.getId()));
         long notExistComId = 1000000L;
         assertThrows(NotFoundException.class, () -> commentService.deleteComment(userId, notExistComId));
+        //выбрасывает ConflictException, если удаляет не автор комментария
+        CommentDto commentDto2 = commentService.createComment(userId, eventId, new NewComment("text"));
+        long otherUserId = userRepository.save(new User(0L, "otherEmail@email.com", "otherUserName")).getId();
+        assertThrows(ConflictException.class, () -> commentService.deleteComment(otherUserId, commentDto2.getId()));
     }
 
     @Test
@@ -519,7 +527,7 @@ class CommentServiceTest {
         CommentDto commentDto1 = commentService.createComment(userId, eventId, new NewComment("text1"));
         CommentDto commentDto2 = commentService.createComment(userId, eventId, new NewComment("text2"));
         CommentDto commentDto3 = commentService.createComment(userId, otherEventId, new NewComment("text3"));
-        CommentDto commentDto4 = commentService.createComment(userId, otherEventId, new NewComment("text4"));
+        commentService.createComment(userId, otherEventId, new NewComment("text4"));
 
         //опубликовать только commentDto1, commentDto2, commentDto3
         commentDto1 = commentService.updateCommentByAdmin(commentDto1.getId(), UpdateCommentAdminRequest.builder().state(CommentState.PUBLISHED).build());
