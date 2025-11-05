@@ -1,9 +1,9 @@
 package ru.practicum.ewm.main.mapper;
 
 import org.mapstruct.*;
-import ru.practicum.ewm.main.dto.CompilationDto;
-import ru.practicum.ewm.main.dto.NewCompilation;
-import ru.practicum.ewm.main.dto.UpdateCompilationAdminRequest;
+import ru.practicum.ewm.main.dto.responses.CompilationDto;
+import ru.practicum.ewm.main.dto.newRequests.NewCompilation;
+import ru.practicum.ewm.main.dto.updateRequests.UpdateCompilationAdminRequest;
 import ru.practicum.ewm.main.model.Compilation;
 
 import java.util.List;

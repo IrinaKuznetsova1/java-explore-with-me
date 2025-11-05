@@ -43,9 +43,12 @@ public class ErrorHandlingControllerAdvice {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ApiError> onConstraintValidationException(ConstraintViolationException e) {
         log.warn("Обработка исключения ConstraintViolationException: {}", e.getMessage());
+        String reason = "Ошибка валидации.";
+        if (e.getCause() != null)
+            reason = e.getCause().toString();
         final ApiError apiError = new ApiError(
                 e.getMessage(),
-                e.getCause().toString(),
+                reason,
                 HttpStatus.BAD_REQUEST.toString(),
                 LocalDateTime.now().format(Constants.DTF));
         apiError.setErrors(e.getConstraintViolations()

@@ -1,4 +1,4 @@
-package ru.practicum.ewm.main.dto;
+package ru.practicum.ewm.main.dto.responses;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
@@ -32,8 +32,10 @@ public class EventFullDto {
 
     private boolean paid;
     private boolean requestModeration;
+    private boolean allowComments;
 
     private long confirmedRequests;
     private long participantLimit;
     private long views;
+    private long countOfComments;
 }

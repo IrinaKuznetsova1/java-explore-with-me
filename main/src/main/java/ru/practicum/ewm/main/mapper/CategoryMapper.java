@@ -3,8 +3,8 @@ package ru.practicum.ewm.main.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.ReportingPolicy;
-import ru.practicum.ewm.main.dto.CategoryDto;
-import ru.practicum.ewm.main.dto.NewCategoryDto;
+import ru.practicum.ewm.main.dto.responses.CategoryDto;
+import ru.practicum.ewm.main.dto.newRequests.NewCategoryDto;
 import ru.practicum.ewm.main.model.Category;
 
 import java.util.List;

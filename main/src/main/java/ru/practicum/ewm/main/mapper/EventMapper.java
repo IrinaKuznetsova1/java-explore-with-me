@@ -1,7 +1,11 @@
 package ru.practicum.ewm.main.mapper;
 
 import org.mapstruct.*;
-import ru.practicum.ewm.main.dto.*;
+import ru.practicum.ewm.main.dto.newRequests.NewEventDto;
+import ru.practicum.ewm.main.dto.responses.EventFullDto;
+import ru.practicum.ewm.main.dto.responses.EventShortDto;
+import ru.practicum.ewm.main.dto.updateRequests.UpdateEventAdminRequest;
+import ru.practicum.ewm.main.dto.updateRequests.UpdateEventUserRequest;
 import ru.practicum.ewm.main.model.Category;
 import ru.practicum.ewm.main.model.Event;
 import ru.practicum.ewm.main.model.User;
@@ -10,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING,
-        uses = {CategoryMapper.class, UserMapper.class},
+        uses = {CategoryMapper.class, UserMapper.class, CommentMapper.class},
         unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface EventMapper {
     @Mapping(target = "id", ignore = true)

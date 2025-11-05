@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
+@Builder
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,12 +51,18 @@ public class Event {
     @Column(nullable = false)
     private boolean paid;
     @Column(name = "request_moderation", nullable = false)
-    private boolean requestModeration;
+    @Builder.Default
+    private boolean requestModeration = true;
+    @Column(name = "allow_comments", nullable = false)
+    private boolean allowComments;
 
     @Column(name = "participant_limit", nullable = false)
     private long participantLimit;
     @Column(name = "confirmed_requests", nullable = false)
+    @Builder.Default
     private long confirmedRequests = 0;
     @Transient
     private long views;
+    @Transient
+    private long countOfComments;
 }

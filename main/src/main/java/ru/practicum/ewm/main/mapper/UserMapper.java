@@ -3,8 +3,8 @@ package ru.practicum.ewm.main.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.ReportingPolicy;
-import ru.practicum.ewm.main.dto.NewUserRequest;
-import ru.practicum.ewm.main.dto.UserDto;
+import ru.practicum.ewm.main.dto.newRequests.NewUserRequest;
+import ru.practicum.ewm.main.dto.responses.UserDto;
 import ru.practicum.ewm.main.model.User;
 
 import java.util.List;

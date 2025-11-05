@@ -8,7 +8,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.ewm.main.dto.*;
+import ru.practicum.ewm.main.dto.newRequests.NewEventDto;
+import ru.practicum.ewm.main.dto.responses.EventFullDto;
+import ru.practicum.ewm.main.dto.updateRequests.EventRequestStatusUpdateRequest;
+import ru.practicum.ewm.main.dto.responses.EventShortDto;
+import ru.practicum.ewm.main.dto.responses.ParticipationRequestDto;
+import ru.practicum.ewm.main.dto.responses.EventRequestStatusUpdateResult;
+import ru.practicum.ewm.main.dto.updateRequests.UpdateEventUserRequest;
 import ru.practicum.ewm.main.services.EventService;
 import ru.practicum.ewm.main.services.RequestService;
 

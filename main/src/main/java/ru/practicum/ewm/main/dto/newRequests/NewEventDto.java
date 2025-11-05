@@ -1,4 +1,4 @@
-package ru.practicum.ewm.main.dto;
+package ru.practicum.ewm.main.dto.newRequests;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
@@ -42,6 +42,10 @@ public class NewEventDto {
     @JsonFormat(shape = JsonFormat.Shape.BOOLEAN)
     @Builder.Default
     private boolean requestModeration = true;
+
+    @JsonFormat(shape = JsonFormat.Shape.BOOLEAN)
+    @Builder.Default
+    private boolean allowComments = true;
 
     @PositiveOrZero(message = "поле 'participantLimit' должно быть больше нуля или равно 0.")
     @JsonFormat(shape = JsonFormat.Shape.NUMBER_INT)
